@@ -867,7 +867,7 @@ async function ghSave(posts, sha, message, cfg = ghCfg()) {
 function ghErr(e) {
   const c = e && e.code;
   if (c === 401) return "GitHub didn't accept the token. Check it's copied fully and hasn't expired.";
-  if (c === 403) return (e.message && /write|push/i.test(e.message)) ? e.message : "The token doesn't have permission. Give it Contents: Read and write on this repo.";
+  if (c === 403) return "GitHub blocked the save" + (e.message ? " (" + e.message + ")" : "") + ". Edit the token: Repository access must include this repo, and Contents must be Read and write, not Read-only.";
   if (c === 404) return "Repo not found. Check the username and repo name, and that the token can access it.";
   return "GitHub error: " + ((e && e.message) || "network problem") + ". Try again.";
 }
@@ -978,7 +978,7 @@ function AdminPanel({ owner }) {
   const mode = owner ? "artifact" : (IS_ARTIFACT ? "denied" : "github");
   const [cfg, setCfg] = useState(ghCfg);
   const [ghState, setGhState] = useState("idle"); // idle | loading | ready
-  const [conn, setConn] = useState({ owner: "RahulJaiswalKeenable", repo: "portfolio", branch: "main", token: "" });
+  const [conn, setConn] = useState({ owner: "Thehackernonymous", repo: "Rahul-Portfolio", branch: "main", token: "" });
   const [form, setForm] = useState(() => {
     try {
       const d = JSON.parse(sessionStorage.getItem("admin-draft") || "null");
@@ -1021,7 +1021,11 @@ function AdminPanel({ owner }) {
     setBusy(true); setStatus("Checking your GitHub access…");
     try {
       const r = await gh(`/repos/${c.owner}/${c.repo}`, {}, c);
-      if (!r.permissions || !r.permissions.push) throw { code: 403, message: "This token can read the repo but can't write to it. Give it Contents: Read and write." };
+      if (!r.permissions || !r.permissions.push) throw { code: 403, message: "your account can't push to this repo" };
+      // Write check: a stale sha on posts.json is rejected (409/422) only after GitHub has checked write permission (403), so nothing changes. If posts.json is missing it gets created as an empty list.
+      try {
+        await gh(`/repos/${c.owner}/${c.repo}/contents/${c.path}`, { method: "PUT", body: JSON.stringify({ message: "blog: create posts.json", content: b64e("[]\n"), sha: "0000000000000000000000000000000000000000", branch: c.branch }) }, c);
+      } catch (w) { if (w.code === 401 || w.code === 403 || w.code === 404) throw w; }
       ghStore(c); setCfg(c); setStatus("");
     } catch (err) { setStatus(ghErr(err)); }
     setBusy(false);
