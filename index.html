@@ -367,7 +367,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .conflict > div{display:grid;gap:2px;min-width:0;flex:1}
 .conflict span{color:var(--muted);font-size:14px}
 .pcard .bcard:hover{transform:none}
-.prose{color:color-mix(in srgb,var(--fg) 88%,var(--muted));font-size:17px;line-height:1.75;min-width:0}
+.prose{color:color-mix(in srgb,var(--fg) 88%,var(--muted));font-size:17px;line-height:1.75;min-width:0;max-width:100%}
+.prose p,.prose li,.prose h4,.prose figcaption,.prose a,.prose code{overflow-wrap:anywhere}
+.prose pre{max-width:100%}
+.dhead,.dhead *{overflow-wrap:anywhere}
+.bsum,.pts li{overflow-wrap:anywhere}
 .prose > *{margin:0 0 1em}
 .prose h4{font-family:var(--f-display);font-size:22px;color:var(--fg);margin-top:1.4em}
 .prose ul,.prose ol{padding-left:22px}
@@ -443,6 +447,14 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .dock{height:72px}
   .dock a{width:46px;height:46px}
   .fsend .btn{flex:1 1 auto;justify-content:center}
+}
+@media (max-width:440px){
+  .logo{font-size:13px;white-space:nowrap}
+  .cn-top .cn-cta{padding:8px 13px;font-size:13px}
+}
+@media (max-width:360px){
+  .cn-top .cn-cta{display:none}
+  .cn-top{grid-template-columns:40px 1fr 40px}
 }
 @media (max-width:380px){
   .cn-cards{grid-template-columns:1fr}
@@ -878,7 +890,21 @@ function mdToHtml(src) {
     }
     if (lines.every((l) => /^\s*[-*] /.test(l))) return "<ul>" + lines.map((l) => "<li>" + inline(l.replace(/^\s*[-*] /, "")) + "</li>").join("") + "</ul>";
     if (lines.every((l) => /^\s*\d+\. /.test(l))) return "<ol>" + lines.map((l) => "<li>" + inline(l.replace(/^\s*\d+\. /, "")) + "</li>").join("") + "</ol>";
-    return "<p>" + lines.map(inline).join("<br>") + "</p>";
+    // plain lines; runs of 2+ tab-separated lines (pasted from Notion, Docs, ChatGPT) become a table
+    const out = []; let buf = [], tab = [];
+    const flushP = () => { if (buf.length) { out.push("<p>" + buf.map(inline).join("<br>") + "</p>"); buf = []; } };
+    const flushT = () => {
+      if (tab.length >= 2) {
+        const rows = tab.map((l) => l.split(/\t+/).map((c) => c.trim()));
+        const n = Math.max(...rows.map((r) => r.length));
+        const row = (r, tag) => "<tr>" + Array.from({ length: n }, (_, i) => "<" + tag + ">" + inline(r[i] || "") + "</" + tag + ">").join("") + "</tr>";
+        out.push('<div class="tbl"><table><thead>' + row(rows[0], "th") + "</thead><tbody>" + rows.slice(1).map((r) => row(r, "td")).join("") + "</tbody></table></div>");
+      } else buf.push(...tab);
+      tab = [];
+    };
+    for (const l of lines) { if (l.includes("\t") && l.trim()) { flushP(); tab.push(l); } else { flushT(); buf.push(l); } }
+    flushT(); flushP();
+    return out.join("");
     })();
   }).join("");
   return String(src || "").split("```").map((part, i) => i % 2
@@ -963,7 +989,7 @@ async function loadRemotePosts() {
 function sortPosts(ps) { return [...ps].sort((a, b) => (b.date || "").localeCompare(a.date || "")); }
 const TAG_COLORS = ["var(--cyan)", "var(--amber)", "var(--ok)", "var(--violet)", "var(--rose)"];
 const tagColor = (t) => { let h = 0; for (const ch of String(t || "")) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return TAG_COLORS[h % TAG_COLORS.length]; };
-const initials = (p) => (p.cover || "").trim().slice(0, 3) || String(p.title || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+const initials = (p) => (p.cover || "").trim().slice(0, 3) || String(p.title || "?").split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w)).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 const statusLabel = (st) => (st === "completed" ? "Completed" : "In progress");
 const today = () => new Date().toISOString().slice(0, 10);
 
