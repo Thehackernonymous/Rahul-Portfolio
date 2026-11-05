@@ -1505,7 +1505,7 @@ function Home() {
     <div class="sec-head"><div><span class="tag">// experience</span><h2>Where I've worked and studied</h2></div></div>
     <${AnimatedContent} className="tl">
       <div class="tl-item"><span class="when">Aug 2023 — Present</span><div>
-        <h3>Software Developer</h3><div class="where">Keen & Able Technologies · Noida</div>
+        <h3>DevOps Engineer</h3><div class="where">Keen & Able Technologies · Noida</div>
         <ul>
           <li>Now: Angular and React modules for UPSC's national recruitment portal, plus production data fixes</li>
           <li>Shipped frontend features in Next.js/React for NPI 2.0, focused on performance and accessibility</li>
@@ -1529,8 +1529,8 @@ function Home() {
         <div class="addr"><span>Email</span><b class="mail">${EMAIL}</b></div>
         <${Dock} items=${[
           { label: "LinkedIn", href: "https://www.linkedin.com/in/rahul-jaiswal-66491122a/", icon: ICONS.work },
-          { label: "GitHub", href: "https://github.com/RahulJaiswalKeenable", icon: ICONS.code },
-          { label: "Instagram", href: "https://www.instagram.com/thehacknonymous/", icon: ICONS.camera },
+          { label: "GitHub", href: "https://github.com/Thehackernonymous", icon: ICONS.code },
+          // { label: "Instagram", href: "https://www.instagram.com/thehacknonymous/", icon: ICONS.camera },
         ]} />
       </div>
       <${ContactForm} />
@@ -1589,7 +1589,7 @@ function App() {
   return html`
   <${CardNav} />
   ${page}
-  <footer><div class="wrap"><span>© 2026 Rahul Jaiswal</span><span>${(owner || (!IS_ARTIFACT && ghCfg())) && r.v !== "admin" ? html`<a href="#admin">Admin panel</a> · ` : ""}React + React Bits style components</span></div></footer>
+  <footer><div class="wrap"><span>© 2026 Rahul Jaiswal</span><span>${(owner || (!IS_ARTIFACT && ghCfg())) && r.v !== "admin" ? html`<a href="#admin">Admin panel</a> · ` : ""}</span></div></footer>
   `;
 }
 
