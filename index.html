@@ -849,11 +849,11 @@ function ContactForm() {
   return html`<form class="cform" onSubmit=${(e) => e.preventDefault()} noValidate>
     <h3>Send me a message</h3>
     <div class="frow">
-      <div class="fld"><label for="c-name">Your name</label><input id="c-name" value=${f.name} onInput=${set("name")} placeholder="Priya Sharma" autocomplete="name" /></div>
-      <div class="fld"><label for="c-from">Company or role</label><input id="c-from" value=${f.from} onInput=${set("from")} placeholder="Hiring manager, Acme" /></div>
+      <div class="fld"><label for="c-name">Your name</label><input id="c-name" value=${f.name} onInput=${set("name")} placeholder="Your Name" autocomplete="name" /></div>
+      <div class="fld"><label for="c-from">Company or role</label><input id="c-from" value=${f.from} onInput=${set("from")} placeholder="Your Company Name" /></div>
     </div>
-    <div class="fld"><label for="c-subject">Subject</label><input id="c-subject" value=${f.subject} onInput=${set("subject")} placeholder="Frontend Developer opening" /></div>
-    <div class="fld"><label for="c-msg">Message</label><textarea id="c-msg" rows="5" value=${f.msg} onInput=${set("msg")} placeholder="Hi Rahul, we have an opening for..." aria-invalid=${!!err}></textarea>
+    <div class="fld"><label for="c-subject">Subject</label><input id="c-subject" value=${f.subject} onInput=${set("subject")} placeholder="Subject" /></div>
+    <div class="fld"><label for="c-msg">Message</label><textarea id="c-msg" rows="5" value=${f.msg} onInput=${set("msg")} placeholder="Description" aria-invalid=${!!err}></textarea>
       ${err && html`<small class="ferr" role="alert">${err}</small>`}</div>
     <div class="fsend">
       <a class="btn primary" id="send-gmail" href=${gmail} target="_blank" rel="noopener" onClick=${guard}>Send via Gmail ↗</a>
