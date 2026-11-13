@@ -279,10 +279,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .fld input,.fld textarea{width:100%;font:inherit;font-size:15px;color:var(--fg);background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:11px 13px;resize:vertical;transition:border-color .2s}
 .fld input::placeholder,.fld textarea::placeholder{color:color-mix(in srgb,var(--muted) 65%,transparent)}
 .fld input:focus,.fld textarea:focus{outline:none;border-color:var(--cyan)}
-.fld textarea[aria-invalid="true"]{border-color:var(--amber)}
+.fld input[aria-invalid="true"],.fld textarea[aria-invalid="true"]{border-color:var(--amber)}
 .ferr{color:var(--amber);font-size:13px}
 .fsend{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .fnote{margin:0;color:var(--muted);font-size:13px}
+.fnote.sent{color:var(--ok)}
+.fnote.error{color:var(--amber)}
 .btn.danger{border-color:#ff6b6b;color:#ff8a8a}
 /* pages */
 .page{padding-block:120px 80px;min-height:70vh}
@@ -827,30 +829,57 @@ function Dock({ items }) {
 
 /* ================= Contact form ================= */
 function ContactForm() {
-  const [f, setF] = useState({ name: "", from: "", subject: "", msg: "" });
-  const [err, setErr] = useState("");
-  const set = (k) => (e) => { setF({ ...f, [k]: e.target.value }); if (k === "msg") setErr(""); };
-  const subject = f.subject.trim() || ("Portfolio enquiry" + (f.name.trim() ? " from " + f.name.trim() : ""));
-  const sign = [f.name.trim(), f.from.trim()].filter(Boolean).join(" · ");
-  const body = f.msg + (sign ? "\n\n— " + sign : "");
-  const q = "su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
-  const gmail = "https://mail.google.com/mail/?view=cm&fs=1&to=" + EMAIL + "&" + q;
-  const mailto = "mailto:" + EMAIL + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
-  const guard = (e) => { if (!f.msg.trim()) { e.preventDefault(); setErr("Write your message first, then send."); document.getElementById("c-msg").focus(); } };
-  return html`<form class="cform" onSubmit=${(e) => e.preventDefault()} noValidate>
+  const blank = { name: "", email: "", subject: "", msg: "" };
+  const [f, setF] = useState(blank);
+  const [err, setErr] = useState({});
+  const [status, setStatus] = useState({ s: "idle", text: "" });
+  const set = (k) => (e) => { setF({ ...f, [k]: e.target.value }); setErr({ ...err, [k]: "" }); if (status.s !== "sending") setStatus({ s: "idle", text: "" }); };
+  const send = async (e) => {
+    e.preventDefault();
+    const bad = {};
+    if (!f.name.trim()) bad.name = "Tell me your name.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) bad.email = "Enter a valid email so I can reply.";
+    if (!f.msg.trim()) bad.msg = "Write your message first.";
+    setErr(bad);
+    const first = ["name", "email", "msg"].find((k) => bad[k]);
+    if (first) { document.getElementById("c-" + first).focus(); return; }
+    setStatus({ s: "sending", text: "" });
+    try {
+      const r = await fetch("https://formsubmit.co/ajax/" + EMAIL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          name: f.name.trim(), email: f.email.trim(), message: f.msg.trim(),
+          _subject: f.subject.trim() || "Portfolio enquiry from " + f.name.trim(),
+          _replyto: f.email.trim(), _template: "table", _captcha: "false"
+        })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || String(d.success) !== "true") throw new Error(d.message || "");
+      setF(blank);
+      setStatus({ s: "sent", text: "Message sent. I'll reply within a day or two." });
+    } catch (x) {
+      setStatus({ s: "error", text: "Couldn't send right now. Please email me at " + EMAIL + "." });
+    }
+  };
+  const fld = (k, label, attrs) => html`<div class="fld"><label for=${"c-" + k}>${label}</label>
+    ${k === "msg"
+      ? html`<textarea id="c-msg" rows="5" value=${f.msg} onInput=${set("msg")} aria-invalid=${!!err.msg} ...${attrs}></textarea>`
+      : html`<input id=${"c-" + k} value=${f[k]} onInput=${set(k)} aria-invalid=${!!err[k]} ...${attrs} />`}
+    ${err[k] && html`<small class="ferr" role="alert">${err[k]}</small>`}</div>`;
+  const sending = status.s === "sending";
+  return html`<form class="cform" onSubmit=${send} noValidate>
     <h3>Send me a message</h3>
     <div class="frow">
-      <div class="fld"><label for="c-name">Your name</label><input id="c-name" value=${f.name} onInput=${set("name")} placeholder="Your Name" autocomplete="name" /></div>
-      <div class="fld"><label for="c-from">Company or role</label><input id="c-from" value=${f.from} onInput=${set("from")} placeholder="Your Company Name" /></div>
+      ${fld("name", "Name", { placeholder: "Your name", autocomplete: "name" })}
+      ${fld("email", "Email", { type: "email", placeholder: "you@example.com", autocomplete: "email" })}
     </div>
-    <div class="fld"><label for="c-subject">Subject</label><input id="c-subject" value=${f.subject} onInput=${set("subject")} placeholder="Subject" /></div>
-    <div class="fld"><label for="c-msg">Message</label><textarea id="c-msg" rows="5" value=${f.msg} onInput=${set("msg")} placeholder="Description" aria-invalid=${!!err}></textarea>
-      ${err && html`<small class="ferr" role="alert">${err}</small>`}</div>
+    ${fld("subject", "Subject", { placeholder: "Subject" })}
+    ${fld("msg", "Message", { placeholder: "Your message" })}
     <div class="fsend">
-      <a class="btn primary" id="send-gmail" href=${gmail} target="_blank" rel="noopener" onClick=${guard}>Send via Gmail ↗</a>
-      <a class="btn" id="send-app" href=${mailto} onClick=${guard}>Use my mail app</a>
+      <button class="btn primary" id="send-msg" type="submit" disabled=${sending}>${sending ? "Sending…" : "Send"}</button>
     </div>
-    <p class="fnote">Opens your email with this message ready, addressed to me. Just press Send.</p>
+    ${status.text && html`<p class=${"fnote " + status.s} role="status">${status.text}</p>`}
   </form>`;
 }
 
