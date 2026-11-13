@@ -828,6 +828,29 @@ function Dock({ items }) {
 }
 
 /* ================= Contact form ================= */
+// Reserved, placeholder and throwaway-inbox domains people type to skip the email field
+const FAKE_DOMAINS = new Set(["test.com", "test.in", "test.org", "testing.com", "example.com", "example.org", "example.net", "domain.com", "email.com", "abc.com", "xyz.com", "asdf.com", "fake.com", "mailinator.com", "yopmail.com", "guerrillamail.com", "sharklasers.com", "10minutemail.com", "tempmail.com", "temp-mail.org", "tempmail.dev", "trashmail.com", "getnada.com", "dispostable.com", "fakeinbox.com", "maildrop.cc", "throwawaymail.com", "mohmal.com", "emailondeck.com", "mintemail.com"]);
+const FAKE_LOCAL = /^(test|testing|tester|abc|abcd|asdf|qwerty|xyz|fake|demo|sample|example|dummy|noreply|no-reply|a+|x+|1+|123+)\d*$/;
+const DOMAIN_TYPOS = { "gmail.co": "gmail.com", "gmail.cm": "gmail.com", "gmail.con": "gmail.com", "gmail.in": "gmail.com", "gmial.com": "gmail.com", "gmai.com": "gmail.com", "gamil.com": "gmail.com", "gnail.com": "gmail.com", "gmaill.com": "gmail.com", "yahoo.co": "yahoo.com", "yaho.com": "yahoo.com", "yahooo.com": "yahoo.com", "hotmail.co": "hotmail.com", "hotmal.com": "hotmail.com", "outlook.co": "outlook.com", "outlok.com": "outlook.com", "iclod.com": "icloud.com", "icloud.co": "icloud.com" };
+function emailProblem(email) {
+  if (!/^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(email)) return "Enter a valid email so I can reply.";
+  const [local, domain] = email.toLowerCase().split("@");
+  if (DOMAIN_TYPOS[domain]) return "Did you mean " + local + "@" + DOMAIN_TYPOS[domain] + "?";
+  if (FAKE_DOMAINS.has(domain) || FAKE_LOCAL.test(local)) return "Please use your real email so I can reply.";
+  return "";
+}
+// Asks public DNS whether the domain accepts mail. Returns false only when it clearly doesn't; network trouble lets the email through.
+async function domainTakesMail(domain) {
+  try {
+    const r = await fetch("https://dns.google/resolve?name=" + encodeURIComponent(domain) + "&type=MX", { headers: { Accept: "application/dns-json" } });
+    if (!r.ok) return true;
+    const d = await r.json();
+    if (d.Status === 3) return false;
+    const mx = (d.Answer || []).filter((a) => a.type === 15);
+    return mx.length > 0 && !mx.every((a) => /^\d+ \.$/.test(a.data.trim()));
+  } catch (e) { return true; }
+}
+
 function ContactForm() {
   const blank = { name: "", email: "", subject: "", msg: "" };
   const [f, setF] = useState(blank);
@@ -838,12 +861,19 @@ function ContactForm() {
     e.preventDefault();
     const bad = {};
     if (!f.name.trim()) bad.name = "Tell me your name.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) bad.email = "Enter a valid email so I can reply.";
+    const ep = emailProblem(f.email.trim());
+    if (ep) bad.email = ep;
     if (!f.msg.trim()) bad.msg = "Write your message first.";
     setErr(bad);
     const first = ["name", "email", "msg"].find((k) => bad[k]);
     if (first) { document.getElementById("c-" + first).focus(); return; }
     setStatus({ s: "sending", text: "" });
+    if (!(await domainTakesMail(f.email.trim().split("@")[1]))) {
+      setErr({ email: "That email domain can't receive mail. Check the spelling." });
+      setStatus({ s: "idle", text: "" });
+      document.getElementById("c-email").focus();
+      return;
+    }
     try {
       const r = await fetch("https://formsubmit.co/ajax/" + EMAIL, {
         method: "POST",
@@ -855,11 +885,12 @@ function ContactForm() {
         })
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok || String(d.success) !== "true") throw new Error(d.message || "");
+      if (!r.ok || String(d.success) !== "true") throw { service: d.message || "HTTP " + r.status };
       setF(blank);
       setStatus({ s: "sent", text: "Message sent. I'll reply within a day or two." });
     } catch (x) {
-      setStatus({ s: "error", text: "Couldn't send right now. Please email me at " + EMAIL + "." });
+      if (x && x.service) console.warn("FormSubmit:", x.service);
+      setStatus({ s: "error", text: "Couldn't send right now" + (x && x.service ? " (" + x.service + ")" : "") + ". Please email me at " + EMAIL + "." });
     }
   };
   const fld = (k, label, attrs) => html`<div class="fld"><label for=${"c-" + k}>${label}</label>
