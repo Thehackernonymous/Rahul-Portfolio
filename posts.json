@@ -1,5 +1,25 @@
 [
   {
+    "id": "system-design-aqm8",
+    "title": "System Design",
+    "tag": "System Design",
+    "status": "in-progress",
+    "period": "Nov 2026 - Present",
+    "summary": "",
+    "cover": "",
+    "tech": [
+      "System Design"
+    ],
+    "points": [
+      "Responsive UI for all devices",
+      "Real-time data processing with Kafka",
+      "Advanced search with Elasticsearch"
+    ],
+    "body": "System Design\n1. Introduction to System Design\nSystem Design is the process of defining the architecture, components, modules, interfaces, and data flow of a system to satisfy specified requirements. It bridges the gap between software requirements and actual implementation.\n\nSYSTEM DESIGN\n\nHIGH-LEVEL DESIGN (HLD)\n\nLOW-LEVEL DESIGN (LLD)\n\nWhat happens here?\n\n• Decide overall architecture\n• Choose technologies (Database, Cache, Message Queue)\n• Define how services communicate\n• Plan for scalability & availability\n\nExample\n\nDesigning an E-commerce System:\n'Order Service' will talk to 'Payment Service' via REST API.\n'Inventory Service' will emit events to Kafka.\n\nWhat happens here?\n\n• Write detailed logic of each function\n• Define database schemas & indexes\n• Create class diagrams & interfaces\n• Handle edge cases & errors\n\nExample\n\nInside 'createOrder' function:\n1. Validate cart items\n2. Check inventory\n3. Process payment\n4. Save order to DB\n5. Return order ID\n\n2. Architecture Types\nMonolithic Architecture\nMicroservices Architecture\nServerless Architecture\nEvent-Driven Architecture\nLayered Architecture\n2.1. Monolithic Architecture :\nIn monolithic architecture, all components and functionalities of an application — frontend, backend, and data storage logic — are tightly coupled and deployed as a single unit. It is sometimes called a Centralized System.\n\n\nAdvantages\nSimple to develop and understand — all code in one place\nFewer network calls between modules (all in-process)\nEasier integration testing\nSimpler deployment — one artifact to build and ship\nEasier to secure — single network perimeter\nDisadvantages\nDifficult to scale — cannot scale individual components independently\nSlower development — codebase grows larger and more complex\nTighter coupling — changes in one module can affect others\nDeployment challenges — entire application must be redeployed for any change\nTechnology lock-in — difficult to adopt new technologies\n\n2.2. Microservices Architecture :\nMicroservices is an evolved, more granular version of SOA where each service is completely independent — it has its own codebase, its own database, and its own deployment pipeline. Services communicate via lightweight APIs (REST, gRPC) or message queues.\n\nAdvantages\nScalability — can scale individual services independently\nTechnology diversity — each service can use different technologies\nFault isolation — failure in one service doesn't affect others\nIndependent deployment — services can be deployed independently\nEasier maintenance — smaller codebases are easier to maintain\nDisadvantages\nComplexity — more complex to develop and manage\nNetwork latency — communication between services over network\nData consistency — maintaining data consistency across services is challenging\nTesting complexity — integration testing is more complex\nDeployment complexity — more complex deployment process\n2.3. Serverless Architecture :\nServerless doesn't mean “no servers.” It means you don’t manage servers. The cloud provider (AWS Lambda, Azure Functions, Google Cloud Functions) automatically provisions, scales, and manages the underlying infrastructure. You just upload code (functions), and the provider runs it on demand.",
+    "date": "2026-11-14",
+    "updated": "2026-11-14"
+  },
+  {
     "id": "kubernetes-complete-beginner-s-guide-wgtn",
     "title": "Kubernetes — Complete Beginner's Guide",
     "tag": "Kubernetes",
