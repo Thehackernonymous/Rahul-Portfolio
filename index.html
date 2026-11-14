@@ -408,6 +408,44 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .sig{color:var(--muted);font-size:14px;margin:12px 0 0}
 .sig a{color:var(--cyan)}
 
+/* Talk to me chat + owner inbox */
+.talk{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:35;box-shadow:0 14px 40px -12px rgba(0,0,0,.85)}
+.chatbox{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 76px);z-index:35;width:min(380px,calc(100vw - 32px));height:min(540px,calc(100svh - 110px));display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 80px -30px rgba(0,0,0,.9);overflow:hidden}
+.chat-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.chat-head div{display:grid;min-width:0}
+.chat-head b{font-family:var(--f-display);font-size:17px}
+.chat-head span{font-size:12px;color:var(--muted)}
+.chat-x{width:34px;height:34px;flex:none;border-radius:50%;border:1px solid var(--line);background:none;color:var(--fg);font-size:20px;line-height:1;cursor:pointer}
+.chat-body{flex:1;min-height:0;display:flex;flex-direction:column}
+.chat-pad{padding:16px;display:grid;gap:14px;align-content:start;overflow-y:auto}
+.chat-pad p{margin:0;color:var(--muted);font-size:14px}
+.chat-note{margin:0;padding:0 14px 10px;font-size:12px;color:var(--muted)}
+.thread{flex:1;min-height:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.bub{max-width:82%;padding:8px 12px;border-radius:14px;background:var(--panel-2);border:1px solid var(--line);align-self:flex-start}
+.bub.me{align-self:flex-end;background:var(--c-cyan);border-color:color-mix(in srgb,var(--cyan) 30%,var(--line))}
+.bub p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.45}
+.bub time{display:block;margin-top:2px;font-size:11px;color:var(--muted);font-family:var(--f-mono)}
+.composer{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:10px;border-top:1px solid var(--line)}
+.composer textarea{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--fg);background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;resize:none;max-height:120px}
+.composer textarea:focus{outline:none;border-color:var(--cyan)}
+.composer .btn{padding:10px 18px}
+.composer .ferr{flex-basis:100%}
+.inbox{display:grid;grid-template-columns:300px 1fr;height:min(70svh,640px);border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--panel)}
+.inbox > *{min-width:0;min-height:0}
+.ilist{border-right:1px solid var(--line);overflow-y:auto;display:grid;align-content:start}
+.ilist > p{padding:16px;margin:0}
+.irow{font:inherit;text-align:left;color:var(--fg);background:none;border:0;border-bottom:1px solid var(--line);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:2px 8px;cursor:pointer;min-width:0}
+.irow:hover,.irow.on{background:var(--panel-2)}
+.irow b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.irow.unread b::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-left:8px;vertical-align:middle}
+.irow time{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.irow span{grid-column:1/-1;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ithread{display:flex;flex-direction:column}
+.ihead{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.iback{display:none}
+.ipick{margin:auto;padding:24px}
+@media (max-width:760px){.inbox{grid-template-columns:1fr;height:calc(100svh - 230px)}.inbox.has-sel .ilist{display:none}.inbox:not(.has-sel) .ithread{display:none}.iback{display:inline}.ilist{border-right:0}}
+
 /* phones */
 @media (max-width:640px){
   section{padding-block:56px}
@@ -839,10 +877,15 @@ function emailProblem(email) {
   if (FAKE_DOMAINS.has(domain) || FAKE_LOCAL.test(local)) return "Please use your real email so I can reply.";
   return "";
 }
+// fetch that gives up after ms, so a blocked or silent service can't leave the form stuck on "Sending…"
+function fetchWithin(url, opts, ms) {
+  const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+  return fetch(url, { ...opts, signal: ac.signal }).finally(() => clearTimeout(t));
+}
 // Asks public DNS whether the domain accepts mail. Returns false only when it clearly doesn't; network trouble lets the email through.
 async function domainTakesMail(domain) {
   try {
-    const r = await fetch("https://dns.google/resolve?name=" + encodeURIComponent(domain) + "&type=MX", { headers: { Accept: "application/dns-json" } });
+    const r = await fetchWithin("https://dns.google/resolve?name=" + encodeURIComponent(domain) + "&type=MX", { headers: { Accept: "application/dns-json" } }, 4000);
     if (!r.ok) return true;
     const d = await r.json();
     if (d.Status === 3) return false;
@@ -875,7 +918,7 @@ function ContactForm() {
       return;
     }
     try {
-      const r = await fetch("https://formsubmit.co/ajax/" + EMAIL, {
+      const r = await fetchWithin("https://formsubmit.co/ajax/" + EMAIL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
@@ -883,12 +926,13 @@ function ContactForm() {
           _subject: f.subject.trim() || "Portfolio enquiry from " + f.name.trim(),
           _replyto: f.email.trim(), _template: "table", _captcha: "false"
         })
-      });
+      }, 20000);
       const d = await r.json().catch(() => ({}));
       if (!r.ok || String(d.success) !== "true") throw { service: d.message || "HTTP " + r.status };
       setF(blank);
       setStatus({ s: "sent", text: "Message sent. I'll reply within a day or two." });
     } catch (x) {
+      if (x && x.name === "AbortError") x = { service: "mail service didn't respond" };
       if (x && x.service) console.warn("FormSubmit:", x.service);
       setStatus({ s: "error", text: "Couldn't send right now" + (x && x.service ? " (" + x.service + ")" : "") + ". Please email me at " + EMAIL + "." });
     }
@@ -1416,7 +1460,7 @@ const skills = [
   ["Languages", "JavaScript, TypeScript, PHP, SQL, Bash"],
 ];
 
-const EMAIL = "rahuljaiswal2820@gmail.com";
+const EMAIL = "rj483313@gmail.com";
 const ICONS = {
   work: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
   github: '<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.75c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>',
@@ -1432,6 +1476,186 @@ function CopyEmail() {
     if (navigator.clipboard) navigator.clipboard.writeText(EMAIL).then(ok).catch(fallback); else fallback();
   };
   return html`<button id="copy-email" class="btn primary" onClick=${copy}>${done ? "Copied" : "Copy email"}</button>`;
+}
+
+/* ================= Talk to me (live chat on Firebase) ================= */
+// Paste your web app config from Firebase console → Project settings → Your apps. With apiKey empty the chat stays hidden.
+
+const FIREBASE = { apiKey: "AIzaSyARf0owUObYcHc88kaxQ9E7lywbbwNl-XA", authDomain: "rjportfolio321.firebaseapp.com", projectId: "rjportfolio321", appId: "1:73301833087:web:5d16c1eabc9efd68add64a" };
+const OWNER_EMAIL = EMAIL; // the Google account allowed into #message; must match firestore.rules
+const CHAT_ON = !!FIREBASE.apiKey;
+const FB_URL = "https://www.gstatic.com/firebasejs/10.14.1/";
+let fbP = null;
+function loadFb() {
+  if (!fbP) fbP = Promise.all(["firebase-app.js", "firebase-auth.js", "firebase-firestore.js"].map((f) => import(FB_URL + f)))
+    .then(([app, A, F]) => { const a = app.initializeApp(FIREBASE); return { A, F, auth: A.getAuth(a), db: F.getFirestore(a) }; })
+    .catch((e) => { fbP = null; throw e; });
+  return fbP;
+}
+function useFb(enabled) {
+  const [s, setS] = useState({ ready: false, err: "", user: null, fb: null });
+  useEffect(() => {
+    if (!enabled) return;
+    let off = () => {}, alive = true;
+    loadFb().then((f) => { if (alive) off = f.A.onAuthStateChanged(f.auth, (user) => setS({ ready: true, err: "", user, fb: f })); })
+      .catch(() => { if (alive) setS({ ready: true, err: "Couldn't load the chat. Check your connection and refresh.", user: null, fb: null }); });
+    return () => { alive = false; off(); };
+  }, [enabled]);
+  return s;
+}
+const isOwnerUser = (u) => !!(u && !u.isAnonymous && u.emailVerified && (u.email || "").toLowerCase() === OWNER_EMAIL.toLowerCase());
+const withData = (d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) });
+const stamp = (t) => { const d = t && t.toDate ? t.toDate() : null; return d ? d.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : ""; };
+function useThread(f, uid) {
+  const [msgs, setMsgs] = useState(null);
+  useEffect(() => {
+    setMsgs(null);
+    if (!f || !uid) return;
+    const { F, db } = f;
+    return F.onSnapshot(F.query(F.collection(db, "chats", uid, "messages"), F.orderBy("at"), F.limitToLast(300)), (q) => setMsgs(q.docs.map(withData)), () => setMsgs([]));
+  }, [f, uid]);
+  return msgs;
+}
+async function sendChat(f, uid, from, text) {
+  const { F, db } = f, b = F.writeBatch(db);
+  b.set(F.doc(F.collection(db, "chats", uid, "messages")), { from, text, at: F.serverTimestamp() });
+  b.update(F.doc(db, "chats", uid), { updatedAt: F.serverTimestamp(), lastText: text.slice(0, 140), lastFrom: from, unread: from === "visitor" });
+  await b.commit();
+}
+
+function Thread({ msgs, me }) {
+  const ref = useRef(null);
+  useEffect(() => { const el = ref.current; if (el) el.scrollTop = el.scrollHeight; }, [msgs]);
+  return html`<div class="thread" ref=${ref} aria-live="polite">
+    ${msgs === null ? html`<p class="muted-s">Loading messages…</p>`
+      : msgs.map((m) => html`<div key=${m.id} class=${"bub " + (m.from === me ? "me" : "them")}><p>${m.text}</p><time>${stamp(m.at)}</time></div>`)}
+  </div>`;
+}
+
+function Composer({ onSend, placeholder }) {
+  const [t, setT] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const go = async (e) => {
+    e.preventDefault();
+    const v = t.trim();
+    if (!v || busy) return;
+    setBusy(true); setErr("");
+    try { await onSend(v.slice(0, 2000)); setT(""); } catch (x) { setErr("Couldn't send. Try again."); }
+    setBusy(false);
+  };
+  return html`<form class="composer" onSubmit=${go}>
+    <textarea rows="1" value=${t} maxLength="2000" placeholder=${placeholder} aria-label="Message" onInput=${(e) => setT(e.target.value)} onKeyDown=${(e) => { if (e.key === "Enter" && !e.shiftKey) go(e); }}></textarea>
+    <button class="btn primary" type="submit" disabled=${busy}>${busy ? "…" : "Send"}</button>
+    ${err && html`<small class="ferr" role="alert">${err}</small>`}
+  </form>`;
+}
+
+function ChatPanel({ onClose }) {
+  const s = useFb(true), f = s.fb, u = s.user;
+  const [chat, setChat] = useState(undefined); // undefined while loading, null when this visitor hasn't started one
+  useEffect(() => {
+    if (!f || !u || isOwnerUser(u)) { setChat(u ? null : (f ? null : undefined)); return; }
+    return f.F.onSnapshot(f.F.doc(f.db, "chats", u.uid), (d) => setChat(d.exists() ? d.data() : null), () => setChat(null));
+  }, [f, u && u.uid]);
+  const msgs = useThread(chat ? f : null, chat ? u.uid : null);
+  const [name, setName] = useState("");
+  const [first, setFirst] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function start(e) {
+    e.preventDefault();
+    const n = name.trim().slice(0, 60), m = first.trim().slice(0, 2000);
+    if (!n || !m) { setErr(!n ? "Tell me your name." : "Write a message first."); return; }
+    setBusy(true); setErr("");
+    try {
+      const cur = f.auth.currentUser || (await f.A.signInAnonymously(f.auth)).user;
+      const { F, db } = f, b = F.writeBatch(db);
+      b.set(F.doc(db, "chats", cur.uid), { name: n, createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp(), lastText: m.slice(0, 140), lastFrom: "visitor", unread: true });
+      b.set(F.doc(F.collection(db, "chats", cur.uid, "messages")), { from: "visitor", text: m, at: F.serverTimestamp() });
+      await b.commit();
+    } catch (x) { setErr("Couldn't start the chat. Try again in a moment."); }
+    setBusy(false);
+  }
+  let body;
+  if (!s.ready) body = html`<div class="chat-pad"><p>Connecting…</p></div>`;
+  else if (s.err) body = html`<div class="chat-pad"><p class="ferr">${s.err}</p></div>`;
+  else if (isOwnerUser(u)) body = html`<div class="chat-pad"><p>You're signed in as the site owner.</p><a class="btn primary" href="#message" onClick=${onClose}>Open your inbox</a></div>`;
+  else if (chat === undefined) body = html`<div class="chat-pad"><p>Loading…</p></div>`;
+  else if (chat === null) body = html`<form class="chat-pad" onSubmit=${start} noValidate>
+      <p>Say hi and I'll reply right here in this chat.</p>
+      <div class="fld"><label for="t-name">Your name</label><input id="t-name" value=${name} maxLength="60" autocomplete="name" placeholder="Your name" onInput=${(e) => { setName(e.target.value); setErr(""); }} /></div>
+      <div class="fld"><label for="t-first">Message</label><textarea id="t-first" rows="4" value=${first} maxLength="2000" placeholder="What would you like to talk about?" onInput=${(e) => { setFirst(e.target.value); setErr(""); }}></textarea></div>
+      ${err && html`<small class="ferr" role="alert">${err}</small>`}
+      <button class="btn primary" id="t-start" type="submit" disabled=${busy}>${busy ? "Starting…" : "Start chat"}</button>
+    </form>`;
+  else body = html`<${Thread} msgs=${msgs} me="visitor" />
+    <p class="chat-note">Chatting as ${chat.name}. Replies appear here; come back on this browser to continue.</p>
+    <${Composer} placeholder="Write a message" onSend=${(t) => sendChat(f, u.uid, "visitor", t)} />`;
+  return html`<div class="chatbox" id="chatbox" role="dialog" aria-label="Chat with Rahul">
+    <div class="chat-head"><div><b>Talk to me</b><span>Rahul usually replies within a day</span></div><button class="chat-x" aria-label="Close chat" onClick=${onClose}>×</button></div>
+    <div class="chat-body">${body}</div>
+  </div>`;
+}
+
+function TalkToMe() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const k = (e) => { if (e.key === "Escape") setOpen(false); };
+    addEventListener("keydown", k);
+    return () => removeEventListener("keydown", k);
+  }, [open]);
+  return html`${open && html`<${ChatPanel} onClose=${() => setOpen(false)} />`}
+    <button class="btn primary talk" id="talk" aria-expanded=${open} aria-controls="chatbox" onClick=${() => setOpen(!open)}>${open ? "Close chat" : "Talk to me"}</button>`;
+}
+
+function Inbox({ f, user }) {
+  const [chats, setChats] = useState(null);
+  const [sel, setSel] = useState(null);
+  useEffect(() => {
+    const { F, db } = f;
+    return F.onSnapshot(F.query(F.collection(db, "chats"), F.orderBy("updatedAt", "desc"), F.limit(300)), (q) => setChats(q.docs.map(withData)), () => setChats([]));
+  }, [f]);
+  const cur = chats && chats.find((c) => c.id === sel);
+  useEffect(() => { if (cur && cur.unread) f.F.updateDoc(f.F.doc(f.db, "chats", cur.id), { unread: false }).catch(() => {}); }, [cur && cur.id, cur && cur.unread]);
+  const msgs = useThread(sel ? f : null, sel);
+  return html`<main class="page"><div class="wrap">
+    <div class="sec-head"><div><span class="tag">// messages</span><h1 class="page-title">Messages</h1></div>
+      <p>Signed in as ${user.email}. <button class="linkbtn" id="m-signout" onClick=${() => f.A.signOut(f.auth)}>Sign out</button></p></div>
+    <div class=${"inbox" + (cur ? " has-sel" : "")}>
+      <aside class="ilist" aria-label="Conversations">
+        ${chats === null ? html`<p class="muted-s">Loading…</p>`
+          : chats.length === 0 ? html`<p class="muted-s">No messages yet. When someone uses Talk to me, they show up here.</p>`
+          : chats.map((c) => html`<button key=${c.id} class=${"irow" + (c.id === sel ? " on" : "") + (c.unread ? " unread" : "")} aria-label=${c.name + (c.unread ? ", unread" : "")} onClick=${() => setSel(c.id)}>
+              <b>${c.name}</b><time>${stamp(c.updatedAt)}</time><span>${c.lastFrom === "owner" ? "You: " : ""}${c.lastText}</span>
+            </button>`)}
+      </aside>
+      <div class="ithread">
+        ${cur ? html`<div class="ihead"><button class="linkbtn iback" onClick=${() => setSel(null)}>← All chats</button><b>${cur.name}</b></div>
+            <${Thread} msgs=${msgs} me="owner" />
+            <${Composer} placeholder=${"Reply to " + cur.name} onSend=${(t) => sendChat(f, cur.id, "owner", t)} />`
+          : html`<p class="muted-s ipick">Select a conversation to read and reply.</p>`}
+      </div>
+    </div>
+  </div></main>`;
+}
+
+function MessagesPage() {
+  const s = useFb(CHAT_ON);
+  const [err, setErr] = useState("");
+  const card = (body) => html`<main class="page"><div class="wrap narrow"><div class="sec-head"><div><span class="tag">// messages</span><h1 class="page-title">Messages</h1></div></div>
+    <div class="empty" style=${{ gridTemplateColumns: "1fr" }}><div>${body}</div></div></div></main>`;
+  if (!CHAT_ON) return card(html`<h3>Chat isn't connected yet</h3><p>Add your Firebase web app config to FIREBASE in index.html, then this page becomes your inbox.</p>`);
+  if (!s.ready) return card(html`<p class="status">Checking access…</p>`);
+  if (s.err) return card(html`<h3>Couldn't load</h3><p>${s.err}</p>`);
+  if (isOwnerUser(s.user)) return html`<${Inbox} f=${s.fb} user=${s.user} />`;
+  const signIn = async () => { setErr(""); try { await s.fb.A.signInWithPopup(s.fb.auth, new s.fb.A.GoogleAuthProvider()); } catch (e) { if (e && e.code !== "auth/popup-closed-by-user") setErr("Sign-in didn't finish. Try again."); } };
+  const other = s.user && !s.user.isAnonymous;
+  return card(html`<h3>${other ? "This inbox is private" : "Sign in to read messages"}</h3>
+    <p>${other ? s.user.email + " can't open this page. Sign in with the site owner's Google account." : "Only the site owner can open this page."}</p>
+    <div class="fsend">${other ? html`<button class="btn" onClick=${() => s.fb.A.signOut(s.fb.auth)}>Sign out</button>` : html`<button class="btn primary" id="m-signin" onClick=${signIn}>Sign in with Google</button>`}</div>
+    ${err && html`<p class="ferr" role="alert">${err}</p>`}`);
 }
 
 function CafMock() {
@@ -1595,6 +1819,7 @@ function useRoute() {
     const h = location.hash.slice(1);
     if (h === "blogs") return { v: "blogs" };
     if (h === "admin") return { v: "admin" };
+    if (h === "message" || h === "messages") return { v: "message" };
     const m = h.match(/^blog-([a-z0-9-]+)$/);
     if (m) return { v: "post", id: m[1] };
     return { v: "home", anchor: h };
@@ -1635,10 +1860,12 @@ function App() {
   if (r.v === "blogs") page = html`<${BlogList} owner=${owner} />`;
   else if (r.v === "post") page = html`<${BlogDetail} id=${r.id} owner=${owner} />`;
   else if (r.v === "admin") page = html`<${AdminPanel} owner=${owner} />`;
+  else if (r.v === "message") page = html`<${MessagesPage} />`;
   else page = html`<${Home} />`;
   return html`
   <${CardNav} />
   ${page}
+  ${CHAT_ON && r.v !== "message" && html`<${TalkToMe} />`}
   <footer><div class="wrap"><span>© 2026 Rahul Jaiswal</span><span>${(owner || (!IS_ARTIFACT && ghCfg())) && r.v !== "admin" ? html`<a href="#admin">Admin panel</a> · ` : ""}</span></div></footer>
   `;
 }
