@@ -119,7 +119,7 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(44px,11vw,92px);
 @keyframes blink{50%{opacity:0}}
 
 /* stats */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+.stats{display:grid;grid-template-columns:repeat(var(--n,4),1fr);border-bottom:1px solid var(--line)}
 .stat{padding:28px 20px;border-right:1px solid var(--line)}
 .stat:last-child{border-right:0}
 .stat b{display:block;font-family:var(--f-display);font-size:clamp(34px,5vw,48px);line-height:1;font-variant-numeric:tabular-nums}
@@ -446,6 +446,36 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .ipick{margin:auto;padding:24px}
 @media (max-width:760px){.inbox{grid-template-columns:1fr;height:calc(100svh - 230px)}.inbox.has-sel .ilist{display:none}.inbox:not(.has-sel) .ithread{display:none}.iback{display:inline}.ilist{border-right:0}}
 
+/* site editor (#me) */
+.mehub{display:flex;flex-wrap:wrap;gap:8px;margin:-16px 0 24px}
+.sfields{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.sfields > *,.sgroup > *{grid-column:1/-1;min-width:0}
+.sfields > .half,.sgroup > .half{grid-column:auto}
+.sgroup{border:1px solid var(--line);border-radius:14px;padding:16px;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;min-width:0}
+.sgroup legend{padding:0 6px;font-weight:600;font-size:14px}
+.slist{display:grid;gap:10px}
+.slist-head{display:grid;gap:2px}
+.slist-head b{font-size:14px}
+.sitem{border:1px solid var(--line);border-radius:12px;background:var(--ink)}
+.sitem summary{cursor:pointer;padding:12px 14px;font-weight:600;font-size:14.5px;overflow-wrap:anywhere}
+.sitem[open] summary{border-bottom:1px solid var(--line)}
+.sitem > .sfields{padding:14px}
+.sitem-act{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 14px}
+.sitem-act .btn,.slist > .btn{padding:7px 14px;font-size:13px}
+.slist > .btn{justify-self:start}
+.sitem-act .btn[disabled]{cursor:not-allowed;opacity:.4}
+.scheck{display:flex;gap:10px;align-items:center;font-size:14px;cursor:pointer}
+.scheck input{width:18px;height:18px;accent-color:var(--cyan)}
+.sbar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;margin-top:20px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.sbar .status{margin-right:auto;flex:1 1 220px;color:var(--muted)}
+.sbar .status.warn{color:var(--amber)}
+.plinks{display:flex;flex-wrap:wrap;gap:8px 16px}
+.plink{font-family:var(--f-mono);font-size:13px;color:var(--cyan);text-decoration:none;position:relative;z-index:1}
+.plink:hover{text-decoration:underline}
+.pvbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 84px);z-index:36;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:center;padding:10px 14px;border:1px solid var(--amber);background:var(--c-amber);border-radius:14px;font-size:14px;width:max-content;max-width:calc(100vw - 32px);box-shadow:0 14px 40px -12px rgba(0,0,0,.85)}
+.pvbar .btn{padding:7px 14px;font-size:13px}
+@media (max-width:640px){.sfields > .half,.sgroup > .half{grid-column:1/-1}.sgroup{padding:12px}}
+
 /* phones */
 @media (max-width:640px){
   section{padding-block:56px}
@@ -649,28 +679,28 @@ function useScroll(fn) { useEffect(() => { scrollSubs.add(fn); fn(); return () =
 // CardNav
 function CardNav() {
   usePosts();
+  const S = useSite().site;
   const [open, setOpen] = useState(false);
   const cards = useRef(null);
   const [h, setH] = useState(60);
   const measure = () => setH(open ? 60 + (cards.current ? cards.current.scrollHeight : 0) : 60);
   useEffect(() => { measure(); addEventListener("resize", measure); return () => removeEventListener("resize", measure); }, [open]);
   const close = () => setOpen(false);
-  const groups = [
-    { t: "About", bg: "var(--panel-2)", links: [["Experience", "#experience"], ["Skills", "#skills"]] },
-    { t: "Work", bg: "var(--c-cyan)", links: [["UPSC portal (now)", "#work"], ["All projects", "#work"]] },
-    { t: "Learning Blogs", bg: "var(--c-violet)", links: [["All blogs", "#blogs"], ...(POSTS.length ? [["Latest: " + sortPosts(POSTS)[0].title, "#blog-" + sortPosts(POSTS)[0].id]] : [])] },
-    { t: "Contact", bg: "var(--c-amber)", links: [["Send a message", "#contact"], ["LinkedIn", "https://www.linkedin.com/in/rahul-jaiswal-66491122a/"], ["Instagram", "https://www.instagram.com/thehacknonymous/"]] },
-  ];
+  const BG = ["var(--panel-2)", "var(--c-cyan)", "var(--c-violet)", "var(--c-amber)"];
+  const blog = { title: "Learning Blogs", links: [{ label: "All blogs", href: "#blogs" }, ...(POSTS.length ? [{ label: "Latest: " + sortPosts(POSTS)[0].title, href: "#blog-" + sortPosts(POSTS)[0].id }] : [])] };
+  const list = (S.navGroups || []).filter((g) => g && g.title);
+  list.splice(Math.min(2, list.length), 0, blog);
+  const groups = list.map((g, i) => ({ t: g.title, bg: BG[i % BG.length], links: (g.links || []).filter((l) => l && l.label).map((l) => [l.label, safeHref(l.href)]) }));
   return html`<div class="cn-wrap"><nav class=${"cardnav" + (open ? " open" : "")} style=${{ height: h }} aria-label="Main">
     <div class="cn-top">
       <button id="menu" class="hamb" aria-expanded=${open} aria-label=${open ? "Close menu" : "Open menu"} onClick=${() => setOpen(!open)}><span></span><span></span></button>
-      <a class="logo" href="#top" onClick=${close}><b>~/</b>rahul-jaiswal</a>
-      <a class="btn primary cn-cta" href="#contact" onClick=${close}>Hire me</a>
+      <a class="logo" href="#top" onClick=${close}><b>~/</b>${S.logo}</a>
+      ${S.cta && html`<a class="btn primary cn-cta" href="#contact" onClick=${close}>${S.cta}</a>`}
     </div>
     <div class="cn-cards" ref=${cards} aria-hidden=${!open}>
-      ${groups.map((g) => html`<div class="cn-card" key=${g.t} style=${{ background: g.bg }}>
+      ${groups.map((g, gi) => html`<div class="cn-card" key=${gi} style=${{ background: g.bg }}>
         <h5>${g.t}</h5>
-        ${g.links.map(([l, href]) => html`<a key=${l} href=${href} tabIndex=${open ? 0 : -1} onClick=${close} target=${href.startsWith("http") ? "_blank" : undefined} rel="noopener">${l}</a>`)}
+        ${g.links.map(([l, href], li) => html`<a key=${li} href=${href} tabIndex=${open ? 0 : -1} onClick=${close} target=${href.startsWith("http") ? "_blank" : undefined} rel="noopener">${l}</a>`)}
       </div>`)}
     </div>
   </nav></div>`;
@@ -894,7 +924,8 @@ async function domainTakesMail(domain) {
   } catch (e) { return true; }
 }
 
-function ContactForm() {
+function ContactForm({ title }) {
+  const to = (SITE.contact.email || EMAIL).trim();
   const blank = { name: "", email: "", subject: "", msg: "" };
   const [f, setF] = useState(blank);
   const [err, setErr] = useState({});
@@ -918,7 +949,7 @@ function ContactForm() {
       return;
     }
     try {
-      const r = await fetchWithin("https://formsubmit.co/ajax/" + EMAIL, {
+      const r = await fetchWithin("https://formsubmit.co/ajax/" + to, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
@@ -934,7 +965,7 @@ function ContactForm() {
     } catch (x) {
       if (x && x.name === "AbortError") x = { service: "mail service didn't respond" };
       if (x && x.service) console.warn("FormSubmit:", x.service);
-      setStatus({ s: "error", text: "Couldn't send right now" + (x && x.service ? " (" + x.service + ")" : "") + ". Please email me at " + EMAIL + "." });
+      setStatus({ s: "error", text: "Couldn't send right now" + (x && x.service ? " (" + x.service + ")" : "") + ". Please email me at " + to + "." });
     }
   };
   const fld = (k, label, attrs) => html`<div class="fld"><label for=${"c-" + k}>${label}</label>
@@ -944,7 +975,7 @@ function ContactForm() {
     ${err[k] && html`<small class="ferr" role="alert">${err[k]}</small>`}</div>`;
   const sending = status.s === "sending";
   return html`<form class="cform" onSubmit=${send} noValidate>
-    <h3>Send me a message</h3>
+    <h3>${title || "Send me a message"}</h3>
     <div class="frow">
       ${fld("name", "Name", { placeholder: "Your name", autocomplete: "name" })}
       ${fld("email", "Email", { type: "email", placeholder: "you@example.com", autocomplete: "email" })}
@@ -1055,19 +1086,21 @@ async function gh(path, opts = {}, cfg = ghCfg()) {
 }
 const b64e = (str) => { const bytes = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); };
 const b64d = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
-async function ghLoad(cfg = ghCfg()) {
+async function ghLoadFile(path, cfg = ghCfg()) {
   try {
-    const j = await gh(`/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}?ref=${encodeURIComponent(cfg.branch)}`, {}, cfg);
-    const posts = JSON.parse(b64d(j.content || "W10="));
-    return { posts: Array.isArray(posts) ? posts : [], sha: j.sha };
-  } catch (e) { if (e.code === 404) return { posts: [], sha: null }; throw e; }
+    const j = await gh(`/repos/${cfg.owner}/${cfg.repo}/contents/${path}?ref=${encodeURIComponent(cfg.branch)}`, {}, cfg);
+    const txt = b64d(j.content || "");
+    return { data: txt.trim() ? JSON.parse(txt) : null, sha: j.sha };
+  } catch (e) { if (e.code === 404) return { data: null, sha: null }; throw e; }
 }
-async function ghSave(posts, sha, message, cfg = ghCfg()) {
-  const body = { message, content: b64e(JSON.stringify(posts, null, 2) + "\n"), branch: cfg.branch };
+async function ghSaveFile(path, data, sha, message, cfg = ghCfg()) {
+  const body = { message, content: b64e(JSON.stringify(data, null, 2) + "\n"), branch: cfg.branch };
   if (sha) body.sha = sha;
-  const j = await gh(`/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`, { method: "PUT", body: JSON.stringify(body) }, cfg);
+  const j = await gh(`/repos/${cfg.owner}/${cfg.repo}/contents/${path}`, { method: "PUT", body: JSON.stringify(body) }, cfg);
   return j.content.sha;
 }
+async function ghLoad(cfg = ghCfg()) { const r = await ghLoadFile(cfg.path, cfg); return { posts: Array.isArray(r.data) ? r.data : [], sha: r.sha }; }
+const ghSave = (posts, sha, message, cfg = ghCfg()) => ghSaveFile(cfg.path, posts, sha, message, cfg);
 function ghErr(e) {
   const c = e && e.code;
   if (c === 401) return "GitHub didn't accept the token. Check it's copied fully and hasn't expired.";
@@ -1199,12 +1232,49 @@ const makeTable = (r, c) => {
   return [head, sep, ...Array(r).fill(row)].join("\n");
 };
 
+// One-time GitHub connection shared by the blog admin and the site editor. Saves only work with a token that can push to the repo.
+function GhConnect({ title, intro, note, onConnect }) {
+  const [conn, setConn] = useState({ owner: "Thehackernonymous", repo: "Rahul-Portfolio", branch: "main", token: "" });
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState(note || "");
+  async function connect(e) {
+    e.preventDefault();
+    const c = { owner: conn.owner.trim(), repo: conn.repo.trim(), branch: conn.branch.trim() || "main", path: "posts.json", token: conn.token.trim() };
+    if (!c.owner || !c.repo || !c.token) { setStatus("Fill in your GitHub username, repo name and token."); return; }
+    setBusy(true); setStatus("Checking your GitHub access…");
+    try {
+      const r = await gh(`/repos/${c.owner}/${c.repo}`, {}, c);
+      if (!r.permissions || !r.permissions.push) throw { code: 403, message: "your account can't push to this repo" };
+      // Write check: a stale sha on posts.json is rejected (409/422) only after GitHub has checked write permission (403), so nothing changes. If posts.json is missing it gets created as an empty list.
+      try {
+        await gh(`/repos/${c.owner}/${c.repo}/contents/${c.path}`, { method: "PUT", body: JSON.stringify({ message: "blog: create posts.json", content: b64e("[]\n"), sha: "0000000000000000000000000000000000000000", branch: c.branch }) }, c);
+      } catch (w) { if (w.code === 401 || w.code === 403 || w.code === 404) throw w; }
+      ghStore(c); setBusy(false); onConnect(c); return;
+    } catch (err) { setStatus(ghErr(err)); }
+    setBusy(false);
+  }
+  return html`<main class="page admin"><div class="wrap narrow">
+    <div class="sec-head"><div><span class="tag">// admin</span><h1 class="page-title">${title}</h1></div><p>${intro}</p></div>
+    <form class="admin-form" onSubmit=${connect}>
+      <h3>Connect GitHub</h3>
+      <div class="frow">
+        <div class="fld"><label for="g-owner">GitHub username</label><input id="g-owner" value=${conn.owner} onInput=${(e) => setConn({ ...conn, owner: e.target.value })} autocomplete="username" /></div>
+        <div class="fld"><label for="g-repo">Repo name</label><input id="g-repo" value=${conn.repo} onInput=${(e) => setConn({ ...conn, repo: e.target.value })} /></div>
+        <div class="fld" style=${{ maxWidth: "140px" }}><label for="g-branch">Branch</label><input id="g-branch" value=${conn.branch} onInput=${(e) => setConn({ ...conn, branch: e.target.value })} /></div>
+      </div>
+      <div class="fld"><label for="g-token">Access token</label><input id="g-token" type="password" value=${conn.token} onInput=${(e) => setConn({ ...conn, token: e.target.value })} placeholder="github_pat_..." autocomplete="off" />
+        <small class="hint">GitHub → Settings → Developer settings → Fine-grained tokens → Generate. Repository access: only this repo. Permissions: Contents → Read and write.</small></div>
+      <div class="fsend"><button id="g-connect" class="btn primary" type="submit" disabled=${busy}>${busy ? "Connecting…" : "Connect"}</button>${status && html`<span class="status" role="status">${status}</span>`}</div>
+      <p class="fnote">The token is stored only in this browser, never in the site's code. Use Disconnect to remove it.</p>
+    </form>
+  </div></main>`;
+}
+
 function AdminPanel({ owner }) {
   usePosts();
   const mode = owner ? "artifact" : (IS_ARTIFACT ? "denied" : "github");
   const [cfg, setCfg] = useState(ghCfg);
   const [ghState, setGhState] = useState("idle"); // idle | loading | ready
-  const [conn, setConn] = useState({ owner: "Thehackernonymous", repo: "Rahul-Portfolio", branch: "main", token: "" });
   const [form, setForm] = useState(() => {
     try {
       const d = JSON.parse(sessionStorage.getItem("admin-draft") || "null");
@@ -1242,40 +1312,9 @@ function AdminPanel({ owner }) {
     <div class="empty" style=${{ gridTemplateColumns: "1fr" }}><div><h3>This area is for the site owner</h3><p>Blogs are managed here by Rahul. You can read everything on the Learning Blogs page.</p><a class="btn primary" href="#blogs">Go to Learning Blogs</a></div></div>
   </div></main>`;
 
-  async function connect(e) {
-    e.preventDefault();
-    const c = { owner: conn.owner.trim(), repo: conn.repo.trim(), branch: conn.branch.trim() || "main", path: "posts.json", token: conn.token.trim() };
-    if (!c.owner || !c.repo || !c.token) { setStatus("Fill in your GitHub username, repo name and token."); return; }
-    setBusy(true); setStatus("Checking your GitHub access…");
-    try {
-      const r = await gh(`/repos/${c.owner}/${c.repo}`, {}, c);
-      if (!r.permissions || !r.permissions.push) throw { code: 403, message: "your account can't push to this repo" };
-      // Write check: a stale sha on posts.json is rejected (409/422) only after GitHub has checked write permission (403), so nothing changes. If posts.json is missing it gets created as an empty list.
-      try {
-        await gh(`/repos/${c.owner}/${c.repo}/contents/${c.path}`, { method: "PUT", body: JSON.stringify({ message: "blog: create posts.json", content: b64e("[]\n"), sha: "0000000000000000000000000000000000000000", branch: c.branch }) }, c);
-      } catch (w) { if (w.code === 401 || w.code === 403 || w.code === 404) throw w; }
-      ghStore(c); setCfg(c); setStatus("");
-    } catch (err) { setStatus(ghErr(err)); }
-    setBusy(false);
-  }
   const disconnect = () => { ghStore(null); setCfg(null); setStatus("Disconnected. The token was removed from this browser."); };
 
-  if (mode === "github" && !cfg) return html`<main class="page admin"><div class="wrap narrow">
-    <div class="sec-head"><div><span class="tag">// admin</span><h1 class="page-title">Blog admin</h1></div>
-      <p>Connect your GitHub repo once on this device. Blogs you publish are saved to posts.json in that repo.</p></div>
-    <form class="admin-form" onSubmit=${connect}>
-      <h3>Connect GitHub</h3>
-      <div class="frow">
-        <div class="fld"><label for="g-owner">GitHub username</label><input id="g-owner" value=${conn.owner} onInput=${(e) => setConn({ ...conn, owner: e.target.value })} autocomplete="username" /></div>
-        <div class="fld"><label for="g-repo">Repo name</label><input id="g-repo" value=${conn.repo} onInput=${(e) => setConn({ ...conn, repo: e.target.value })} /></div>
-        <div class="fld" style=${{ maxWidth: "140px" }}><label for="g-branch">Branch</label><input id="g-branch" value=${conn.branch} onInput=${(e) => setConn({ ...conn, branch: e.target.value })} /></div>
-      </div>
-      <div class="fld"><label for="g-token">Access token</label><input id="g-token" type="password" value=${conn.token} onInput=${(e) => setConn({ ...conn, token: e.target.value })} placeholder="github_pat_..." autocomplete="off" />
-        <small class="hint">GitHub → Settings → Developer settings → Fine-grained tokens → Generate. Repository access: only this repo. Permissions: Contents → Read and write.</small></div>
-      <div class="fsend"><button id="g-connect" class="btn primary" type="submit" disabled=${busy}>${busy ? "Connecting…" : "Connect"}</button>${status && html`<span class="status" role="status">${status}</span>`}</div>
-      <p class="fnote">The token is stored only in this browser, never in the site's code. Use Disconnect to remove it.</p>
-    </form>
-  </div></main>`;
+  if (mode === "github" && !cfg) return html`<${GhConnect} title="Blog admin" intro="Connect your GitHub repo once on this device. Blogs you publish are saved to posts.json in that repo." note=${status} onConnect=${(c) => { setStatus(""); setCfg(c); }} />`;
 
   async function save(next, draft, label) {
     setBusy(true);
@@ -1435,30 +1474,146 @@ function AdminPanel({ owner }) {
   </div></main>`;
 }
 
-/* ================= Content ================= */
-const shipped = [
-  { kind: "Government · Frontend", title: "National Portal of India — NPI 2.0",
-    points: ["Frontend of India's national government portal, tuned for faster page loads", "Multiple external government APIs unified through GraphQL", "Improved relevance and speed of the OpenSearch Global Search"],
-    stack: ["Next.js", "GraphQL", "OpenSearch", "Tailwind", "SonarQube"] },
-  { kind: "Platform · CMS", title: "Strapi CMS for NPI 2.0",
-    points: ["Custom plugins incl. Excel import/export for large datasets", "Private-to-public media pipeline on MinIO", "React admin-panel components with Keycloak auth"],
-    stack: ["Strapi", "React", "Keycloak", "MinIO"] },
-  { kind: "Internal tool", title: "DCP — Data Control Panel",
-    points: ["Next.js panel to manage and validate datasets used by external APIs", "Reused the NPI Global Search architecture", "Documented component library in Storybook"],
-    stack: ["Next.js", "Storybook", "SonarQube"] },
-  { kind: "Mobile", title: "NPI Mobile App",
-    points: ["Cross-platform Android and iOS app for the National Portal", "GraphQL data fetching with optimised screen performance", "In-app search across portal content"],
-    stack: ["React Native", "GraphQL"] },
-];
+/* ================= Content =================
+   Everything shown on the home page. The live copy is site.json in the repo, edited at #me;
+   these defaults are used until site.json exists and fill any field it doesn't have. */
+const DEFAULT_SITE = {
+  site: {
+    title: "Rahul Jaiswal Portfolio", logo: "rahul-jaiswal", cta: "Hire me", footer: "© 2026 Rahul Jaiswal",
+    navGroups: [
+      { title: "About", links: [{ label: "Experience", href: "#experience" }, { label: "Skills", href: "#skills" }] },
+      { title: "Work", links: [{ label: "UPSC portal (now)", href: "#work" }, { label: "All projects", href: "#work" }] },
+      { title: "Contact", links: [{ label: "Send a message", href: "#contact" }, { label: "LinkedIn", href: "https://www.linkedin.com/in/rahul-jaiswal-66491122a/" }, { label: "Instagram", href: "https://www.instagram.com/thehacknonymous/" }] },
+    ],
+  },
+  hero: {
+    eyebrow: "Open to new roles · Noida, India", first: "Rahul", last: "Jaiswal",
+    roles: ["DevOps Engineer", "Now building: UPSC portal", "Full-stack · Next.js / Angular"],
+    lede: "3+ years building *high-traffic government platforms* used by millions of citizens. I've shipped the National Portal of India, its CMS and mobile app, and I'm currently working on UPSC's online recruitment portal.",
+    cta1: "See my work →", cta1Href: "#work", cta2: "Get in touch", cta2Href: "#contact",
+  },
+  terminal: {
+    title: "rahul@keenable: ~", whoami: "rahul — DevOps Engineer @ Keen & Able",
+    rows: [
+      { name: "upsc-portal", status: "InProgress", stack: "angular" },
+      { name: "npi-2.0", status: "Completed", stack: "next.js" },
+      { name: "strapi-cms", status: "Completed", stack: "strapi" },
+      { name: "dcp-panel", status: "Completed", stack: "next.js" },
+      { name: "npi-mobile", status: "Completed", stack: "react-native" },
+    ],
+  },
+  stats: {
+    items: [
+      { value: "3", suffix: "+", label: "years in production" },
+      { value: "4", suffix: "", label: "platforms shipped" },
+      { value: "1", suffix: "", label: "in progress: UPSC" },
+      { value: "MCA", suffix: "", label: "AKTU, 2022" },
+    ],
+  },
+  work: {
+    tag: "// selected work", title: "Platforms people actually use", intro: "National-scale portals where uptime, accessibility and performance matter every day.",
+    featured: {
+      kind: "Government · Recruitment", badge: "Working on now", title: "UPSC Online Recruitment Portal",
+      desc: "The portal candidates use to apply for UPSC exams. I build and stabilise the Common Application Form and the Universal Registration flow.",
+      live: "", code: "",
+      stack: ["Angular", "TypeScript", "React", "GraphQL", "Keycloak", "MongoDB", "Kubernetes"],
+      focus: [
+        { title: "Common Application Form", desc: "Education, employment, prior exams, Aadhaar, photo and signature modules" },
+        { title: "Production data fixes", desc: "Invalid dates, duplicate qualifications, photo-ID mismatches" },
+        { title: "Universal Registration", desc: "React module with Keycloak authentication" },
+      ],
+    },
+    projects: [
+      { kind: "Government · Frontend", badge: "✓ Shipped", title: "National Portal of India — NPI 2.0", live: "", code: "",
+        points: ["Frontend of India's national government portal, tuned for faster page loads", "Multiple external government APIs unified through GraphQL", "Improved relevance and speed of the OpenSearch Global Search"],
+        stack: ["Next.js", "GraphQL", "OpenSearch", "Tailwind", "SonarQube"] },
+      { kind: "Platform · CMS", badge: "✓ Shipped", title: "Strapi CMS for NPI 2.0", live: "", code: "",
+        points: ["Custom plugins incl. Excel import/export for large datasets", "Private-to-public media pipeline on MinIO", "React admin-panel components with Keycloak auth"],
+        stack: ["Strapi", "React", "Keycloak", "MinIO"] },
+      { kind: "Internal tool", badge: "✓ Shipped", title: "DCP — Data Control Panel", live: "", code: "",
+        points: ["Next.js panel to manage and validate datasets used by external APIs", "Reused the NPI Global Search architecture", "Documented component library in Storybook"],
+        stack: ["Next.js", "Storybook", "SonarQube"] },
+      { kind: "Mobile", badge: "✓ Shipped", title: "NPI Mobile App", live: "", code: "",
+        points: ["Cross-platform Android and iOS app for the National Portal", "GraphQL data fetching with optimised screen performance", "In-app search across portal content"],
+        stack: ["React Native", "GraphQL"] },
+    ],
+  },
+  skills: {
+    marquee1: ["Next.js", "React", "Angular", "GraphQL", "Strapi", "Node.js"],
+    marquee2: ["Docker", "Kubernetes", "Linux", "Nginx", "Keycloak", "MinIO"],
+    items: [
+      { title: "Frontend", text: "React.js, Next.js, Angular, Vue.js, React Native, Redux Toolkit, Tailwind CSS, Storybook" },
+      { title: "Backend & CMS", text: "Node.js, Express.js, GraphQL, REST APIs, Laravel, Strapi" },
+      { title: "DevOps & Infra", text: "Docker, Kubernetes, Nginx, Apache, Linux (Ubuntu/RHEL), VMware, MinIO, Keycloak, Shell scripting" },
+      { title: "Data & Search", text: "PostgreSQL, MySQL, MongoDB, OpenSearch" },
+      { title: "Quality", text: "Playwright, Lighthouse, SonarQube" },
+      { title: "Languages", text: "JavaScript, TypeScript, PHP, SQL, Bash" },
+    ],
+  },
+  about: {
+    tag: "// about",
+    text: "I build government software that millions of citizens depend on. Fast pages, accessible forms and reliable releases are the job. Next, I want to own the whole path from code to infrastructure.",
+    highlight: "millions, reliable, infrastructure.",
+  },
+  experience: {
+    tag: "// experience", title: "Where I've worked and studied",
+    items: [
+      { when: "Aug 2023 — Present", title: "DevOps Engineer", where: "Keen & Able Technologies · Noida", edu: false,
+        points: ["Now: Angular and React modules for UPSC's national recruitment portal, plus production data fixes", "Shipped frontend features in Next.js/React for NPI 2.0, focused on performance and accessibility", "Owned the Strapi CMS end to end: content models, custom APIs and plugins, Keycloak auth", "Built Laravel REST APIs for an in-house CMS with MinIO media storage", "Ran Dockerized apps on Ubuntu/RHEL and VMware, automating routine ops with shell scripts"] },
+      { when: "2021 — 2022", title: "Master of Computer Applications", where: "Dr. APJ Abdul Kalam Technical University · Lucknow", edu: true, points: [] },
+      { when: "2017 — 2020", title: "Bachelor of Computer Applications", where: "Rakshpal Bahadur College of Institutions · Bareilly", edu: true, points: [] },
+    ],
+  },
+  contact: {
+    tag: "// contact", title: "Let's build something", highlight: "reliable.",
+    intro: "Hiring for a frontend, full-stack or DevOps role? Or just want to talk about government-scale web apps? Send me a message and I'll reply within a day or two.",
+    email: "rj483313@gmail.com", formTitle: "Send me a message",
+    links: [
+      { label: "LinkedIn", icon: "work", href: "https://www.linkedin.com/in/rahul-jaiswal-66491122a/" },
+      { label: "GitHub", icon: "github", href: "https://github.com/RahulJaiswalKeenable" },
+    ],
+  },
+};
 
-const skills = [
-  ["Frontend", "React.js, Next.js, Angular, Vue.js, React Native, Redux Toolkit, Tailwind CSS, Storybook"],
-  ["Backend & CMS", "Node.js, Express.js, GraphQL, REST APIs, Laravel, Strapi"],
-  ["DevOps & Infra", "Docker, Kubernetes, Nginx, Apache, Linux (Ubuntu/RHEL), VMware, MinIO, Keycloak, Shell scripting"],
-  ["Data & Search", "PostgreSQL, MySQL, MongoDB, OpenSearch"],
-  ["Quality", "Playwright, Lighthouse, SonarQube"],
-  ["Languages", "JavaScript, TypeScript, PHP, SQL, Bash"],
-];
+// Fills every field of the defaults from saved data of the same type, so older site.json files keep working when fields are added.
+function mergeSite(def, v) {
+  if (Array.isArray(def)) return Array.isArray(v) ? v : def;
+  if (def && typeof def === "object") {
+    const src = v && typeof v === "object" && !Array.isArray(v) ? v : {}, o = {};
+    for (const k in def) o[k] = mergeSite(def[k], src[k]);
+    return o;
+  }
+  if (typeof def === "boolean") return typeof v === "boolean" ? v : def;
+  return typeof v === "string" ? v : def;
+}
+// Trims text and drops blank lines and empty list items before saving.
+function cleanSite(v) {
+  if (Array.isArray(v)) return v.map(cleanSite).filter((x) => typeof x === "string" ? x !== ""
+    : !(x && typeof x === "object" && Object.values(x).every((y) => y === "" || y === false || (Array.isArray(y) && !y.length))));
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, cleanSite(x)]));
+  return typeof v === "string" ? v.trim() : v;
+}
+let SITE = DEFAULT_SITE, SITE_PUBLISHED = DEFAULT_SITE, PREVIEW = false, siteSha = null;
+const siteSubs = new Set();
+function setSite(next, preview = false) {
+  SITE = next; PREVIEW = preview;
+  if (next.site.title) document.title = next.site.title;
+  siteSubs.forEach((f) => f((n) => n + 1));
+}
+function useSite() { const [, f] = useState(0); useEffect(() => { siteSubs.add(f); return () => siteSubs.delete(f); }, []); return SITE; }
+async function loadSite() {
+  if (IS_ARTIFACT) return;
+  try {
+    const r = await fetch("site.json", { cache: "no-store" });
+    if (!r.ok) return;
+    SITE_PUBLISHED = mergeSite(DEFAULT_SITE, await r.json());
+    if (!PREVIEW) setSite(SITE_PUBLISHED);
+  } catch (e) {}
+}
+const okHref = (v) => /^(https?:\/\/|mailto:|#)/i.test(String(v || "").trim());
+const safeHref = (v) => (okHref(v) ? String(v).trim() : "#");
+const isExt = (h) => /^https?:/i.test(h);
+const lines = (a) => (Array.isArray(a) ? a : []).map((x) => String(x || "").trim()).filter(Boolean);
 
 const EMAIL = "rj483313@gmail.com";
 const ICONS = {
@@ -1466,6 +1621,7 @@ const ICONS = {
   github: '<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.75c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>',
   camera: '<rect x="3" y="6" width="18" height="14" rx="4"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/>',
 };
 
 function CopyEmail() {
@@ -1689,35 +1845,45 @@ function CafMock() {
   </div>`;
 }
 
+// Text with *starred* words rendered in the shiny highlight
+function Shiny({ text }) { return String(text || "").split(/\*([^*]+)\*/).map((part, i) => (i % 2 ? html`<span key=${i} class="shiny">${part}</span>` : part)); }
+function ProjectLinks({ p }) {
+  const ls = [[p.live, "Visit"], [p.code, "Source code"]].filter(([h]) => okHref(h));
+  return ls.length > 0 && html`<div class="plinks">${ls.map(([h, l]) => html`<a key=${l} class="plink" href=${h.trim()} target=${isExt(h) ? "_blank" : undefined} rel="noopener">${l} ↗</a>`)}</div>`;
+}
+const chips = (a) => html`<div class="chips">${lines(a).map((x, i) => html`<span class="chip" key=${i}>${x}</span>`)}</div>`;
+
 function Home() {
+  const S = useSite(), H = S.hero, T = S.terminal, W = S.work, F = W.featured, K = S.skills, A = S.about, X = S.experience, C = S.contact;
+  const rows = (T.rows || []).filter((r) => r && r.name);
+  const stats = (S.stats.items || []).filter((x) => x && (x.value || x.label));
+  const roles = lines(H.roles), focus = (F.focus || []).filter((x) => x && x.title);
+  const m1 = lines(K.marquee1), m2 = lines(K.marquee2);
+  const links = (C.links || []).filter((l) => l && l.label && okHref(l.href));
   return html`
 
   <header class="hero" id="top">
     <${Aurora} />
     <div class="wrap">
       <div class="hero-text">
-        <div class="eyebrow"><span class="dot"></span>Open to new roles · Noida, India</div>
-        <h1><${SplitText} text="Rahul" /><br/><${SplitText} text="Jaiswal" offset=${250} delay=${55} /></h1>
-        <div class="role">> <${DecryptedText} words=${["DevOps Engineer", "Now building: UPSC portal", "Full-stack · Next.js / Angular"]} /></div>
-        <p class="lede">3+ years building <span class="shiny">high-traffic government platforms</span> used by millions of citizens. I've shipped the National Portal of India, its CMS and mobile app, and I'm currently working on UPSC's online recruitment portal.</p>
+        ${H.eyebrow && html`<div class="eyebrow"><span class="dot"></span>${H.eyebrow}</div>`}
+        <h1 key=${H.first + "|" + H.last}><${SplitText} text=${H.first} /><br/><${SplitText} text=${H.last} offset=${250} delay=${55} /></h1>
+        ${roles.length > 0 && html`<div class="role">> <${DecryptedText} key=${roles.join("|")} words=${roles} /></div>`}
+        <p class="lede"><${Shiny} text=${H.lede} /></p>
         <div class="cta">
-          <${Magnet}><${StarBorder} href="#work">See my work →<//><//>
-          <${Magnet}><a class="btn" href="#contact">Get in touch</a><//>
+          ${H.cta1 && html`<${Magnet}><${StarBorder} href=${safeHref(H.cta1Href)}>${H.cta1}<//><//>`}
+          ${H.cta2 && html`<${Magnet}><a class="btn" href=${safeHref(H.cta2Href)}>${H.cta2}</a><//>`}
         </div>
       </div>
-      <div class="term" role="img" aria-label="Terminal listing Rahul's projects: UPSC portal in progress, four others completed">
-        <div class="term-bar"><i></i><i></i><i></i><span>rahul@keenable: ~</span></div>
+      <div class="term" role="img" aria-label=${"Terminal listing projects: " + rows.map((r) => r.name + " " + r.status).join(", ")}>
+        <div class="term-bar"><i></i><i></i><i></i><span>${T.title}</span></div>
         <div class="term-body">
           <div><span class="p">$</span> whoami</div>
-          <div class="c">rahul — DevOps Engineer @ Keen & Able</div>
+          <div class="c">${T.whoami}</div>
           <div style=${{ marginTop: 10 }}><span class="p">$</span> kubectl get projects</div>
           <table><tbody>
             <tr class="c"><td>NAME</td><td>STATUS</td><td>STACK</td></tr>
-            <tr><td>upsc-portal</td><td class="now-t">InProgress</td><td>angular</td></tr>
-            <tr><td>npi-2.0</td><td class="done-t">Completed</td><td>next.js</td></tr>
-            <tr><td>strapi-cms</td><td class="done-t">Completed</td><td>strapi</td></tr>
-            <tr><td>dcp-panel</td><td class="done-t">Completed</td><td>next.js</td></tr>
-            <tr><td>npi-mobile</td><td class="done-t">Completed</td><td>react-native</td></tr>
+            ${rows.map((r, i) => html`<tr key=${i}><td>${r.name}</td><td class=${/progress|now|wip|building/i.test(r.status || "") ? "now-t" : "done-t"}>${r.status}</td><td>${r.stack}</td></tr>`)}
           </tbody></table>
           <div style=${{ marginTop: 10 }}><span class="p">$</span> <span class="cursor"></span></div>
         </div>
@@ -1725,93 +1891,258 @@ function Home() {
     </div>
   </header>
 
-  <div class="wrap"><div class="stats">
-    <div class="stat"><${CountUp} to=${3} suffix="+" /><span>years in production</span></div>
-    <div class="stat"><${CountUp} to=${4} /><span>platforms shipped</span></div>
-    <div class="stat"><${CountUp} to=${1} /><span>in progress: UPSC</span></div>
-    <div class="stat"><b>MCA</b><span>AKTU, 2022</span></div>
-  </div></div>
+  ${stats.length > 0 && html`<div class="wrap"><div class="stats" style=${{ "--n": stats.length }}>
+    ${stats.map((x, i) => html`<div class="stat" key=${i}>${/^\d+$/.test((x.value || "").trim()) ? html`<${CountUp} to=${+x.value} suffix=${x.suffix || ""} />` : html`<b>${x.value}${x.suffix}</b>`}<span>${x.label}</span></div>`)}
+  </div></div>`}
 
 
   <section id="work"><div class="wrap">
-    <${AnimatedContent} className="sec-head"><div><span class="tag">// selected work</span><h2>Platforms people actually use</h2></div>
-      <p>National-scale portals where uptime, accessibility and performance matter every day.</p><//>
+    <${AnimatedContent} className="sec-head"><div><span class="tag">${W.tag}</span><h2>${W.title}</h2></div>
+      <p>${W.intro}</p><//>
     <div class="grid">
-      <${TiltCard} className="feature">
+      ${F.title && html`<${TiltCard} className="feature">
         <div>
-          <div class="card-top"><span class="kind">Government · Recruitment</span><span class="pill now">Working on now</span></div>
-          <h3>UPSC Online Recruitment Portal</h3>
-          <p>The portal candidates use to apply for UPSC exams. I build and stabilise the Common Application Form and the Universal Registration flow.</p>
-          <div class="chips">${["Angular", "TypeScript", "React", "GraphQL", "Keycloak", "MongoDB", "Kubernetes"].map((s) => html`<span class="chip" key=${s}>${s}</span>`)}</div>
+          <div class="card-top"><span class="kind">${F.kind}</span>${F.badge && html`<span class="pill now">${F.badge}</span>`}</div>
+          <h3>${F.title}</h3>
+          <p>${F.desc}</p>
+          <${ProjectLinks} p=${F} />
+          ${chips(F.stack)}
         </div>
-        <div class="focus">
-          <div><b>Common Application Form</b><span>Education, employment, prior exams, Aadhaar, photo and signature modules</span></div>
-          <div><b>Production data fixes</b><span>Invalid dates, duplicate qualifications, photo-ID mismatches</span></div>
-          <div><b>Universal Registration</b><span>React module with Keycloak authentication</span></div>
-        </div>
-      <//>
-      ${shipped.map((p, i) => html`<${AnimatedContent} key=${p.title} delay=${(i % 2) * 120} className="card-slot" as="div">
+        ${focus.length > 0 && html`<div class="focus">${focus.map((x, i) => html`<div key=${i}><b>${x.title}</b><span>${x.desc}</span></div>`)}</div>`}
+      <//>`}
+      ${(W.projects || []).filter((x) => x && x.title).map((x, i) => html`<${AnimatedContent} key=${i} delay=${(i % 2) * 120} className="card-slot" as="div">
         <${TiltCard}>
-          <div class="card-top"><span class="kind">${p.kind}</span><span class="pill ship">✓ Shipped</span></div>
-          <h3>${p.title}</h3>
-          <ul>${p.points.map((x) => html`<li key=${x}>${x}</li>`)}</ul>
-          <div class="chips">${p.stack.map((s) => html`<span class="chip" key=${s}>${s}</span>`)}</div>
+          <div class="card-top"><span class="kind">${x.kind}</span>${x.badge && html`<span class="pill ship">${x.badge}</span>`}</div>
+          <h3>${x.title}</h3>
+          ${lines(x.points).length > 0 && html`<ul>${lines(x.points).map((t, j) => html`<li key=${j}>${t}</li>`)}</ul>`}
+          <${ProjectLinks} p=${x} />
+          ${chips(x.stack)}
         <//>
       <//>`)}
     </div>
   </div></section>
 
   <section id="skills" style=${{ paddingTop: 0 }}>
-    <${VelocityMarquee} items=${["Next.js", "React", "Angular", "GraphQL", "Strapi", "Node.js"]} />
-    <${VelocityMarquee} items=${["Docker", "Kubernetes", "Linux", "Nginx", "Keycloak", "MinIO"]} reverse=${true} outline=${true} />
+    ${m1.length > 0 && html`<${VelocityMarquee} key=${"a" + m1.join("|")} items=${m1} />`}
+    ${m2.length > 0 && html`<${VelocityMarquee} key=${"b" + m2.join("|")} items=${m2} reverse=${true} outline=${true} />`}
     <div class="wrap">
-      <div class="skills">${skills.map(([h, t], i) => html`<${AnimatedContent} key=${h} delay=${i * 70}><div class="skill"><h4>${h}</h4><p>${t}</p></div><//>`)}</div>
+      <div class="skills">${(K.items || []).filter((x) => x && x.title).map((x, i) => html`<${AnimatedContent} key=${i} delay=${i * 70}><div class="skill"><h4>${x.title}</h4><p>${x.text}</p></div><//>`)}</div>
     </div>
   </section>
 
-  <section style=${{ paddingTop: 24 }}><div class="wrap">
-    <span class="tag">// about</span>
+  ${A.text && html`<section style=${{ paddingTop: 24 }}><div class="wrap">
+    <span class="tag">${A.tag}</span>
     <div style=${{ marginTop: 16 }}>
-      <${ScrollReveal} highlight=${["millions", "reliable", "infrastructure."]} text="I build government software that millions of citizens depend on. Fast pages, accessible forms and reliable releases are the job. Next, I want to own the whole path from code to infrastructure." />
+      <${ScrollReveal} key=${A.text + A.highlight} highlight=${A.highlight.split(",").map((w) => w.trim().toLowerCase()).filter(Boolean)} text=${A.text} />
     </div>
-  </div></section>
+  </div></section>`}
 
   <section id="experience" style=${{ paddingTop: 24 }}><div class="wrap">
-    <div class="sec-head"><div><span class="tag">// experience</span><h2>Where I've worked and studied</h2></div></div>
+    <div class="sec-head"><div><span class="tag">${X.tag}</span><h2>${X.title}</h2></div></div>
     <${AnimatedContent} className="tl">
-      <div class="tl-item"><span class="when">Aug 2023 — Present</span><div>
-        <h3>DevOps Engineer</h3><div class="where">Keen & Able Technologies · Noida</div>
-        <ul>
-          <li>Now: Angular and React modules for UPSC's national recruitment portal, plus production data fixes</li>
-          <li>Shipped frontend features in Next.js/React for NPI 2.0, focused on performance and accessibility</li>
-          <li>Owned the Strapi CMS end to end: content models, custom APIs and plugins, Keycloak auth</li>
-          <li>Built Laravel REST APIs for an in-house CMS with MinIO media storage</li>
-          <li>Ran Dockerized apps on Ubuntu/RHEL and VMware, automating routine ops with shell scripts</li>
-        </ul></div></div>
-      <div class="tl-item edu"><span class="when">2021 — 2022</span><div>
-        <h3>Master of Computer Applications</h3><div class="where">Dr. APJ Abdul Kalam Technical University · Lucknow</div></div></div>
-      <div class="tl-item edu"><span class="when">2017 — 2020</span><div>
-        <h3>Bachelor of Computer Applications</h3><div class="where">Rakshpal Bahadur College of Institutions · Bareilly</div></div></div>
+      ${(X.items || []).filter((x) => x && x.title).map((x, i) => html`<div key=${i} class=${"tl-item" + (x.edu ? " edu" : "")}><span class="when">${x.when}</span><div>
+        <h3>${x.title}</h3><div class="where">${x.where}</div>
+        ${lines(x.points).length > 0 && html`<ul>${lines(x.points).map((t, j) => html`<li key=${j}>${t}</li>`)}</ul>`}</div></div>`)}
     <//>
   </div></section>
 
   <section id="contact" class="contact" style=${{ paddingTop: 24 }}><div class="wrap">
-    <span class="tag">// contact</span>
-    <h2>Let's build something <span class="grad">reliable.</span></h2>
+    <span class="tag">${C.tag}</span>
+    <h2>${C.title}${C.highlight && html` <span class="grad">${C.highlight}</span>`}</h2>
     <div class="contact-grid">
       <div class="contact-side">
-        <p>Hiring for a frontend, full-stack or DevOps role? Or just want to talk about government-scale web apps? Send me a message and I'll reply within a day or two.</p>
-        <div class="addr"><span>Email</span><b class="mail">${EMAIL}</b></div>
-        <${Dock} items=${[
-          { label: "LinkedIn", href: "https://www.linkedin.com/in/rahul-jaiswal-66491122a/", icon: ICONS.work },
-          { label: "GitHub", href: "https://github.com/RahulJaiswalKeenable", icon: ICONS.github }
-        ]} />
+        <p>${C.intro}</p>
+        ${C.email && html`<div class="addr"><span>Email</span><b class="mail">${C.email}</b></div>`}
+        ${links.length > 0 && html`<${Dock} items=${links.map((l) => ({ label: l.label, href: l.href.trim(), icon: ICONS[l.icon] || ICONS.link }))} />`}
       </div>
-      <${ContactForm} />
+      <${ContactForm} title=${C.formTitle} />
     </div>
   </div></section>
 
   `;
+}
+
+/* ================= Site editor (#me) ================= */
+const F_ = (k, label, type = "text", x = {}) => ({ k, label, type, ...x });
+const LIST_ = (k, label, itemName, item, blank, title, x = {}) => ({ k, label, type: "list", itemName, item, blank, title, ...x });
+const ICON_OPTS = [["work", "Briefcase (LinkedIn)"], ["github", "GitHub"], ["camera", "Camera (Instagram)"], ["mail", "Mail"], ["link", "Link"]];
+const PROJECT_LINKS = [F_("live", "Live link", "url", { half: true, ph: "https://…" }), F_("code", "Source code link", "url", { half: true, ph: "https://github.com/…" })];
+const ONE_PER_LINE = { hint: "One per line" };
+const SECTIONS = [
+  { id: "hero", label: "Hero", fields: [
+    F_("eyebrow", "Top line (next to the green dot)"),
+    F_("first", "First name", "text", { half: true }), F_("last", "Last name", "text", { half: true }),
+    F_("roles", "Rotating titles", "lines", { hint: "One per line. They type out one after another." }),
+    F_("lede", "Intro paragraph", "textarea", { rows: 4, hint: "Wrap words in *stars* to make them shine." }),
+    F_("cta1", "First button text", "text", { half: true }), F_("cta1Href", "First button link", "url", { half: true }),
+    F_("cta2", "Second button text", "text", { half: true }), F_("cta2Href", "Second button link", "url", { half: true }),
+  ] },
+  { id: "terminal", label: "Terminal card", fields: [
+    F_("title", "Window title", "text", { half: true }), F_("whoami", "whoami line", "text", { half: true }),
+    LIST_("rows", "Project rows", "Row", [F_("name", "Name", "text", { half: true }), F_("status", "Status", "text", { half: true, hint: "Contains \"progress\" → amber, anything else → green" }), F_("stack", "Stack")],
+      { name: "", status: "Completed", stack: "" }, (x) => x.name),
+  ] },
+  { id: "stats", label: "Stats", fields: [
+    LIST_("items", "Numbers", "Stat", [F_("value", "Value", "text", { half: true, hint: "A whole number counts up; text like MCA shows as is." }), F_("suffix", "After the value", "text", { half: true, ph: "+" }), F_("label", "Label")],
+      { value: "", suffix: "", label: "" }, (x) => [(x.value || "") + (x.suffix || ""), x.label].filter(Boolean).join(" · ")),
+  ] },
+  { id: "work", label: "Projects", fields: [
+    F_("tag", "Small tag", "text", { half: true }), F_("title", "Heading", "text", { half: true }), F_("intro", "Intro", "textarea", { rows: 2 }),
+    { k: "featured", label: "Featured project (big card)", type: "object", fields: [
+      F_("kind", "Category", "text", { half: true }), F_("badge", "Badge", "text", { half: true, ph: "Working on now" }),
+      F_("title", "Title", "text", { hint: "Leave empty to hide the big card." }), F_("desc", "Description", "textarea"),
+      ...PROJECT_LINKS, F_("stack", "Tech stack", "lines", ONE_PER_LINE),
+      LIST_("focus", "Highlights (right side)", "Highlight", [F_("title", "Title", "text", { half: true }), F_("desc", "Detail", "text", { half: true })], { title: "", desc: "" }, (x) => x.title),
+    ] },
+    LIST_("projects", "Project cards", "Project", [
+      F_("kind", "Category", "text", { half: true }), F_("badge", "Badge", "text", { half: true, ph: "✓ Shipped" }), F_("title", "Title"),
+      F_("points", "Bullet points", "lines", ONE_PER_LINE), ...PROJECT_LINKS, F_("stack", "Tech stack", "lines", ONE_PER_LINE),
+    ], { kind: "", badge: "✓ Shipped", title: "", points: [], stack: [], live: "", code: "" }, (x) => x.title),
+  ] },
+  { id: "skills", label: "Skills", fields: [
+    F_("marquee1", "Scrolling row 1", "lines", { half: true, ...ONE_PER_LINE }), F_("marquee2", "Scrolling row 2 (outline)", "lines", { half: true, ...ONE_PER_LINE }),
+    LIST_("items", "Skill groups", "Group", [F_("title", "Group name"), F_("text", "Skills", "textarea", { rows: 2 })], { title: "", text: "" }, (x) => x.title),
+  ] },
+  { id: "about", label: "About", fields: [
+    F_("tag", "Small tag"), F_("text", "About text", "textarea", { rows: 4, hint: "Leave empty to hide this section." }),
+    F_("highlight", "Words to colour", "text", { hint: "Comma separated, e.g. millions, reliable" }),
+  ] },
+  { id: "experience", label: "Experience", fields: [
+    F_("tag", "Small tag", "text", { half: true }), F_("title", "Heading", "text", { half: true }),
+    LIST_("items", "Timeline", "Entry", [F_("when", "Dates", "text", { half: true }), F_("title", "Role or degree", "text", { half: true }), F_("where", "Company or college"),
+      F_("points", "Bullet points", "lines", { hint: "One per line. Optional." }), F_("edu", "Education (amber dot)", "bool")],
+      { when: "", title: "", where: "", points: [], edu: false }, (x) => x.title),
+  ] },
+  { id: "contact", label: "Contact", fields: [
+    F_("tag", "Small tag", "text", { half: true }), F_("formTitle", "Form heading", "text", { half: true }),
+    F_("title", "Heading", "text", { half: true }), F_("highlight", "Coloured end of the heading", "text", { half: true }),
+    F_("intro", "Intro", "textarea"),
+    F_("email", "Email", "text", { hint: "Shown on the page. The contact form sends here too; a new address needs one FormSubmit activation." }),
+    LIST_("links", "Profile icons", "Profile", [F_("label", "Name", "text", { half: true }), F_("icon", "Icon", "select", { half: true, options: ICON_OPTS }), F_("href", "Link", "url")],
+      { label: "", icon: "link", href: "" }, (x) => x.label),
+  ] },
+  { id: "site", label: "Menu & footer", fields: [
+    F_("title", "Browser tab title"), F_("logo", "Logo text", "text", { half: true }), F_("cta", "Menu button text", "text", { half: true }),
+    LIST_("navGroups", "Menu cards", "Card", [F_("title", "Card title"),
+      LIST_("links", "Links", "Link", [F_("label", "Text", "text", { half: true }), F_("href", "Link", "url", { half: true })], { label: "", href: "" }, (x) => x.label)],
+      { title: "", links: [] }, (x) => x.title, { hint: "The Learning Blogs card is added automatically." }),
+    F_("footer", "Footer text"),
+  ] },
+];
+
+function SiteField({ f, value, onChange, idp }) {
+  const id = idp + "-" + f.k;
+  if (f.type === "list") return html`<${SiteList} f=${f} value=${Array.isArray(value) ? value : []} onChange=${onChange} idp=${id} />`;
+  if (f.type === "object") return html`<fieldset class="sgroup"><legend>${f.label}</legend>
+    ${f.fields.map((c) => html`<${SiteField} key=${c.k} f=${c} value=${(value || {})[c.k]} onChange=${(v) => onChange({ ...(value || {}), [c.k]: v })} idp=${id} />`)}</fieldset>`;
+  if (f.type === "bool") return html`<label class="scheck"><input type="checkbox" id=${id} checked=${!!value} onChange=${(e) => onChange(e.target.checked)} />${f.label}</label>`;
+  let input;
+  if (f.type === "textarea" || f.type === "lines") input = html`<textarea id=${id} rows=${f.rows || (f.type === "lines" ? 4 : 3)} placeholder=${f.ph || ""}
+    value=${f.type === "lines" ? (Array.isArray(value) ? value : []).join("\n") : value || ""} onInput=${(e) => onChange(f.type === "lines" ? e.target.value.split("\n") : e.target.value)}></textarea>`;
+  else if (f.type === "select") input = html`<select id=${id} value=${value || f.options[0][0]} onChange=${(e) => onChange(e.target.value)}>${f.options.map(([v, l]) => html`<option key=${v} value=${v}>${l}</option>`)}</select>`;
+  else input = html`<input id=${id} type=${f.type === "url" ? "url" : "text"} value=${value || ""} placeholder=${f.ph || ""} onInput=${(e) => onChange(e.target.value)} />`;
+  const badUrl = f.type === "url" && String(value || "").trim() && !okHref(value);
+  return html`<div class=${"fld" + (f.half ? " half" : "")}><label for=${id}>${f.label}</label>${input}
+    ${badUrl ? html`<small class="ferr">Use a full link starting with https:// (or #section). Other links are ignored.</small>` : f.hint && html`<small class="hint">${f.hint}</small>`}</div>`;
+}
+
+function SiteList({ f, value, onChange, idp }) {
+  const [added, setAdded] = useState(-1);
+  const set = (i, v) => onChange(value.map((x, j) => (j === i ? v : x)));
+  const move = (i, d) => { const a = [...value]; [a[i], a[i + d]] = [a[i + d], a[i]]; onChange(a); };
+  return html`<div class="slist">
+    <div class="slist-head"><b>${f.label}</b>${f.hint && html`<small class="hint">${f.hint}</small>`}</div>
+    ${value.map((it, i) => html`<details class="sitem" key=${i} open=${i === added}>
+      <summary>${(f.title && f.title(it || {})) || f.itemName + " " + (i + 1)}</summary>
+      <div class="sfields">${f.item.map((c) => html`<${SiteField} key=${c.k} f=${c} value=${(it || {})[c.k]} onChange=${(v) => set(i, { ...(it || {}), [c.k]: v })} idp=${idp + "-" + i} />`)}</div>
+      <div class="sitem-act">
+        <button type="button" class="btn" disabled=${i === 0} onClick=${() => move(i, -1)}>↑ Up</button>
+        <button type="button" class="btn" disabled=${i === value.length - 1} onClick=${() => move(i, 1)}>↓ Down</button>
+        <button type="button" class="btn danger" onClick=${() => onChange(value.filter((_, j) => j !== i))}>Remove</button>
+      </div>
+    </details>`)}
+    <button type="button" class="btn" onClick=${() => { onChange([...value, JSON.parse(JSON.stringify(f.blank))]); setAdded(value.length); }}>+ Add ${f.itemName.toLowerCase()}</button>
+  </div>`;
+}
+
+const SITE_DRAFT_KEY = "site-editor-draft";
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+function SiteEditor() {
+  const [cfg, setCfg] = useState(IS_ARTIFACT ? null : ghCfg);
+  const [pub, setPub] = useState(null);
+  const [draft, setDraft] = useState(null);
+  const [sec, setSec] = useState("hero");
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (PREVIEW) setSite(SITE_PUBLISHED); }, []);
+  useEffect(() => {
+    if (!cfg) return;
+    let alive = true;
+    setStatus("");
+    ghLoadFile("site.json", cfg).then(({ data, sha }) => {
+      if (!alive) return;
+      siteSha = sha;
+      const p = mergeSite(DEFAULT_SITE, data || {});
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(SITE_DRAFT_KEY) || "null"); } catch (e) {}
+      setPub(p); setDraft(saved ? mergeSite(DEFAULT_SITE, saved) : p);
+    }).catch((e) => { if (!alive) return; setStatus(ghErr(e)); if (e.code === 401) { ghStore(null); setCfg(null); } });
+    return () => { alive = false; };
+  }, [cfg]);
+  useEffect(() => {
+    if (!draft || !pub) return;
+    try { if (same(draft, pub)) localStorage.removeItem(SITE_DRAFT_KEY); else localStorage.setItem(SITE_DRAFT_KEY, JSON.stringify(draft)); } catch (e) {}
+  }, [draft, pub]);
+
+  if (IS_ARTIFACT) return html`<main class="page"><div class="wrap"><div class="empty" style=${{ gridTemplateColumns: "1fr" }}><div><h3>Edit on your live site</h3><p>The site editor saves to your GitHub repo. Open /me on your GitHub Pages site to use it.</p></div></div></div></main>`;
+  if (!cfg) return html`<${GhConnect} title="Edit your site" intro="Connect your GitHub repo once on this device. Everything you edit here is saved to site.json in that repo, and the live site updates about a minute later." note=${status} onConnect=${setCfg} />`;
+  if (!draft) return html`<main class="page"><div class="wrap"><p class="status">${status || "Loading your site content from GitHub…"}</p></div></main>`;
+
+  const dirty = !same(draft, pub);
+  const S = SECTIONS.find((x) => x.id === sec);
+  const disconnect = () => { ghStore(null); setCfg(null); setPub(null); setDraft(null); };
+  async function publish() {
+    setBusy(true); setStatus("Publishing to GitHub…");
+    const clean = cleanSite(draft);
+    try {
+      siteSha = await ghSaveFile("site.json", clean, siteSha, "site: update content");
+      const merged = mergeSite(DEFAULT_SITE, clean);
+      setPub(merged); setDraft(merged); SITE_PUBLISHED = merged; setSite(merged);
+      setStatus("Published. The live site shows it after GitHub Pages redeploys, usually within a minute.");
+    } catch (e) {
+      if (e.code === 409 || e.code === 422) {
+        try { siteSha = (await ghLoadFile("site.json")).sha; } catch (x) {}
+        setStatus("site.json changed on GitHub since this page loaded. Press Publish again to save your version over it.");
+      } else setStatus(ghErr(e));
+    }
+    setBusy(false);
+  }
+  const preview = () => { setSite(mergeSite(DEFAULT_SITE, cleanSite(draft)), true); location.hash = "top"; };
+  const discard = () => { setDraft(pub); setStatus("Unpublished changes discarded."); };
+
+  return html`<main class="page admin"><div class="wrap">
+    <div class="sec-head"><div><span class="tag">// me</span><h1 class="page-title">Edit your site</h1></div>
+      <p>Connected to <b>${cfg.owner}/${cfg.repo}</b>. Changes go live about a minute after you publish. <button class="linkbtn" id="s-disconnect" onClick=${disconnect}>Disconnect</button></p></div>
+    <div class="mehub"><a class="btn" href="#top">View site</a><a class="btn" href="#admin">Blogs</a>${CHAT_ON && html`<a class="btn" href="#message">Messages</a>`}</div>
+    <div class="admin-grid">
+      <aside class="admin-list" aria-label="Sections">
+        <div class="alist" style=${{ maxHeight: "none" }}>
+          ${SECTIONS.map((x) => html`<button key=${x.id} id=${"sec-" + x.id} class=${"arow" + (x.id === sec ? " on" : "")} onClick=${() => setSec(x.id)}>
+            <b>${x.label}</b>${!same(draft[x.id], pub[x.id]) && html`<span><i class="sdot"></i>Unpublished changes</span>`}</button>`)}
+        </div>
+      </aside>
+      <form class="admin-form" onSubmit=${(e) => { e.preventDefault(); publish(); }}>
+        <div class="aform-head"><h3>${S.label}</h3></div>
+        <div class="sfields" key=${sec}>${S.fields.map((f) => html`<${SiteField} key=${f.k} f=${f} value=${draft[sec][f.k]} onChange=${(v) => { setDraft((d) => ({ ...d, [sec]: { ...d[sec], [f.k]: v } })); setStatus(""); }} idp=${"s-" + sec} />`)}</div>
+      </form>
+    </div>
+    <div class="sbar">
+      <span class=${"status" + (dirty || status ? " warn" : "")} role="status">${status || (dirty ? "You have unpublished changes." : "Everything is published.")}</span>
+      ${dirty && html`<button class="btn" id="s-discard" type="button" onClick=${discard} disabled=${busy}>Discard</button>`}
+      <button class="btn" id="s-preview" type="button" onClick=${preview}>Preview</button>
+      <button class="btn primary" id="s-publish" type="button" onClick=${publish} disabled=${busy || !dirty}>${busy ? "Publishing…" : "Publish"}</button>
+    </div>
+  </div></main>`;
 }
 
 function useRoute() {
@@ -1820,6 +2151,7 @@ function useRoute() {
     if (h === "blogs") return { v: "blogs" };
     if (h === "admin") return { v: "admin" };
     if (h === "message" || h === "messages") return { v: "message" };
+    if (h === "me") return { v: "me" };
     const m = h.match(/^blog-([a-z0-9-]+)$/);
     if (m) return { v: "post", id: m[1] };
     return { v: "home", anchor: h };
@@ -1851,6 +2183,7 @@ function useOwner() {
 
 function App() {
   const r = useRoute();
+  const S = useSite();
   const owner = useOwner();
   useEffect(() => {
     if (r.v === "home" && r.anchor) { const el = document.getElementById(r.anchor); if (el) requestAnimationFrame(() => el.scrollIntoView()); }
@@ -1861,16 +2194,25 @@ function App() {
   else if (r.v === "post") page = html`<${BlogDetail} id=${r.id} owner=${owner} />`;
   else if (r.v === "admin") page = html`<${AdminPanel} owner=${owner} />`;
   else if (r.v === "message") page = html`<${MessagesPage} />`;
+  else if (r.v === "me") page = html`<${SiteEditor} />`;
   else page = html`<${Home} />`;
   return html`
   <${CardNav} />
   ${page}
-  ${CHAT_ON && r.v !== "message" && html`<${TalkToMe} />`}
-  <footer><div class="wrap"><span>© 2026 Rahul Jaiswal</span><span>${(owner || (!IS_ARTIFACT && ghCfg())) && r.v !== "admin" ? html`<a href="#admin">Admin panel</a> · ` : ""}</span></div></footer>
+  ${CHAT_ON && r.v !== "message" && r.v !== "me" && html`<${TalkToMe} />`}
+  ${PREVIEW && r.v !== "me" && html`<div class="pvbar" role="status"><span>Previewing unpublished changes</span><a class="btn primary" href="#me">Back to editor</a><button class="btn" onClick=${() => setSite(SITE_PUBLISHED)}>Exit preview</button></div>`}
+  <footer><div class="wrap"><span>${S.site.footer}</span><span>${(owner || (!IS_ARTIFACT && ghCfg())) && r.v !== "me" ? html`<a href="#me">Edit site</a>` : ""}</span></div></footer>
   `;
 }
 
-function boot() { capturePage(); ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`); loadRemotePosts(); }
+// Waits briefly for site.json so visitors don't see the default content flash first; a slow fetch still updates the page when it lands.
+function boot() {
+  capturePage();
+  let started = false;
+  const start = () => { if (started) return; started = true; ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`); loadRemotePosts(); };
+  loadSite().finally(start);
+  setTimeout(start, 1200);
+}
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 </script>
 <!--page-end-->
