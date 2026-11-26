@@ -2201,7 +2201,7 @@ function App() {
   ${page}
   ${CHAT_ON && r.v !== "message" && r.v !== "me" && html`<${TalkToMe} />`}
   ${PREVIEW && r.v !== "me" && html`<div class="pvbar" role="status"><span>Previewing unpublished changes</span><a class="btn primary" href="#me">Back to editor</a><button class="btn" onClick=${() => setSite(SITE_PUBLISHED)}>Exit preview</button></div>`}
-  <footer><div class="wrap"><span>${S.site.footer}</span><span>${(owner || (!IS_ARTIFACT && ghCfg())) && r.v !== "me" ? html`<a href="#me">Edit site</a>` : ""}</span></div></footer>
+  <footer><div class="wrap"><span>${S.site.footer}</span></div></footer>
   `;
 }
 
