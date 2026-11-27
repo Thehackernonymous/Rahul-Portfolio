@@ -80,6 +80,11 @@
         "stack": "next.js"
       },
       {
+        "name": "npi-mobile",
+        "status": "Completed",
+        "stack": "react-native"
+      },
+      {
         "name": "strapi-cms",
         "status": "Completed",
         "stack": "strapi"
@@ -90,9 +95,9 @@
         "stack": "next.js"
       },
       {
-        "name": "npi-mobile",
+        "name": "laravel-cms",
         "status": "Completed",
-        "stack": "react-native"
+        "stack": "laravel"
       }
     ]
   },
