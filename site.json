@@ -1,0 +1,333 @@
+{
+  "site": {
+    "title": "Rahul Jaiswal Portfolio",
+    "logo": "rahul-jaiswal",
+    "cta": "Hire me",
+    "footer": "© 2026 Rahul Jaiswal",
+    "navGroups": [
+      {
+        "title": "About",
+        "links": [
+          {
+            "label": "Experience",
+            "href": "#experience"
+          },
+          {
+            "label": "Skills",
+            "href": "#skills"
+          }
+        ]
+      },
+      {
+        "title": "Work",
+        "links": [
+          {
+            "label": "UPSC portal (now)",
+            "href": "#work"
+          },
+          {
+            "label": "All projects",
+            "href": "#work"
+          }
+        ]
+      },
+      {
+        "title": "Contact",
+        "links": [
+          {
+            "label": "Send a message",
+            "href": "#contact"
+          },
+          {
+            "label": "LinkedIn",
+            "href": "https://www.linkedin.com/in/rahul-jaiswal-66491122a/"
+          },
+          {
+            "label": "Instagram",
+            "href": "https://www.instagram.com/thehacknonymous/"
+          }
+        ]
+      }
+    ]
+  },
+  "hero": {
+    "eyebrow": "Open to new roles · Noida, India",
+    "first": "Rahul",
+    "last": "Jaiswal",
+    "roles": [
+      "DevOps Engineer",
+      "Now building: UPSC portal",
+      "Full-stack · Next.js / Angular"
+    ],
+    "lede": "3+ years building *high-traffic government platforms* used by millions of citizens. I've shipped the National Portal of India, its CMS and mobile app, and I'm currently working on UPSC's online recruitment portal.",
+    "cta1": "See my work →",
+    "cta1Href": "#work",
+    "cta2": "Get in touch",
+    "cta2Href": "#contact"
+  },
+  "terminal": {
+    "title": "rahul@keenable: ~",
+    "whoami": "rahul — DevOps Engineer @ Keen & Able",
+    "rows": [
+      {
+        "name": "upsc-portal",
+        "status": "InProgress",
+        "stack": "angular"
+      },
+      {
+        "name": "npi-2.0",
+        "status": "Completed",
+        "stack": "next.js"
+      },
+      {
+        "name": "strapi-cms",
+        "status": "Completed",
+        "stack": "strapi"
+      },
+      {
+        "name": "dcp-panel",
+        "status": "Completed",
+        "stack": "next.js"
+      },
+      {
+        "name": "npi-mobile",
+        "status": "Completed",
+        "stack": "react-native"
+      }
+    ]
+  },
+  "stats": {
+    "items": [
+      {
+        "value": "3",
+        "suffix": "+",
+        "label": "years in production"
+      },
+      {
+        "value": "4",
+        "suffix": "",
+        "label": "platforms shipped"
+      },
+      {
+        "value": "1",
+        "suffix": "",
+        "label": "in progress: UPSC"
+      },
+      {
+        "value": "MCA",
+        "suffix": "",
+        "label": "AKTU, 2022"
+      }
+    ]
+  },
+  "work": {
+    "tag": "// selected work",
+    "title": "Platforms people actually use",
+    "intro": "National-scale portals where uptime, accessibility and performance matter every day.",
+    "featured": {
+      "kind": "Government · Recruitment",
+      "badge": "Working on now",
+      "title": "UPSC Online Recruitment Portal",
+      "desc": "The portal candidates use to apply for UPSC exams. I build and stabilise the Common Application Form and the Universal Registration flow.",
+      "live": "https://upsconline.nic.in/",
+      "code": "",
+      "stack": [
+        "Angular",
+        "TypeScript",
+        "React",
+        "GraphQL",
+        "Keycloak",
+        "MongoDB",
+        "Kubernetes"
+      ],
+      "focus": [
+        {
+          "title": "Common Application Form",
+          "desc": "Education, employment, prior exams, Aadhaar, photo and signature modules"
+        },
+        {
+          "title": "Production data fixes",
+          "desc": "Invalid dates, duplicate qualifications, photo-ID mismatches"
+        },
+        {
+          "title": "Universal Registration",
+          "desc": "React module with Keycloak authentication"
+        }
+      ]
+    },
+    "projects": [
+      {
+        "kind": "Government · Frontend",
+        "badge": "✓ Shipped",
+        "title": "National Portal of India — NPI 2.0",
+        "live": "https://india.gov.in/",
+        "code": "",
+        "points": [
+          "Frontend of India's national government portal, tuned for faster page loads",
+          "Multiple external government APIs unified through GraphQL",
+          "Improved relevance and speed of the OpenSearch Global Search"
+        ],
+        "stack": [
+          "Next.js",
+          "GraphQL",
+          "OpenSearch",
+          "Tailwind",
+          "SonarQube"
+        ]
+      },
+      {
+        "kind": "Platform · CMS",
+        "badge": "✓ Shipped",
+        "title": "Strapi CMS for NPI 2.0",
+        "live": "",
+        "code": "",
+        "points": [
+          "Custom plugins incl. Excel import/export for large datasets",
+          "Private-to-public media pipeline on MinIO",
+          "React admin-panel components with Keycloak auth"
+        ],
+        "stack": [
+          "Strapi",
+          "React",
+          "Keycloak",
+          "MinIO"
+        ]
+      },
+      {
+        "kind": "Internal tool",
+        "badge": "✓ Shipped",
+        "title": "DCP — Data Control Panel",
+        "live": "",
+        "code": "",
+        "points": [
+          "Next.js panel to manage and validate datasets used by external APIs",
+          "Reused the NPI Global Search architecture",
+          "Documented component library in Storybook"
+        ],
+        "stack": [
+          "Next.js",
+          "Storybook",
+          "SonarQube"
+        ]
+      },
+      {
+        "kind": "Mobile",
+        "badge": "✓ Shipped",
+        "title": "NPI Mobile App",
+        "live": "",
+        "code": "",
+        "points": [
+          "Cross-platform Android and iOS app for the National Portal",
+          "GraphQL data fetching with optimised screen performance",
+          "In-app search across portal content"
+        ],
+        "stack": [
+          "React Native",
+          "GraphQL"
+        ]
+      }
+    ]
+  },
+  "skills": {
+    "marquee1": [
+      "Next.js",
+      "React",
+      "Angular",
+      "GraphQL",
+      "Strapi",
+      "Node.js"
+    ],
+    "marquee2": [
+      "Docker",
+      "Kubernetes",
+      "Linux",
+      "Nginx",
+      "Keycloak",
+      "MinIO"
+    ],
+    "items": [
+      {
+        "title": "Frontend",
+        "text": "React.js, Next.js, Angular, Vue.js, React Native, Redux Toolkit, Tailwind CSS, Storybook"
+      },
+      {
+        "title": "Backend & CMS",
+        "text": "Node.js, Express.js, GraphQL, REST APIs, Laravel, Strapi"
+      },
+      {
+        "title": "DevOps & Infra",
+        "text": "Docker, Kubernetes, Nginx, Apache, Linux (Ubuntu/RHEL), VMware, MinIO, Keycloak, Shell scripting"
+      },
+      {
+        "title": "Data & Search",
+        "text": "PostgreSQL, MySQL, MongoDB, OpenSearch"
+      },
+      {
+        "title": "Quality",
+        "text": "Playwright, Lighthouse, SonarQube"
+      },
+      {
+        "title": "Languages",
+        "text": "JavaScript, TypeScript, PHP, SQL, Bash"
+      }
+    ]
+  },
+  "about": {
+    "tag": "// about",
+    "text": "I build government software that millions of citizens depend on. Fast pages, accessible forms and reliable releases are the job. Next, I want to own the whole path from code to infrastructure.",
+    "highlight": "millions, reliable, infrastructure."
+  },
+  "experience": {
+    "tag": "// experience",
+    "title": "Where I've worked and studied",
+    "items": [
+      {
+        "when": "Aug 2023 — Present",
+        "title": "DevOps Engineer",
+        "where": "Keen & Able Technologies · Noida",
+        "edu": false,
+        "points": [
+          "Now: Angular and React modules for UPSC's national recruitment portal, plus production data fixes",
+          "Shipped frontend features in Next.js/React for NPI 2.0, focused on performance and accessibility",
+          "Owned the Strapi CMS end to end: content models, custom APIs and plugins, Keycloak auth",
+          "Built Laravel REST APIs for an in-house CMS with MinIO media storage",
+          "Ran Dockerized apps on Ubuntu/RHEL and VMware, automating routine ops with shell scripts"
+        ]
+      },
+      {
+        "when": "2021 — 2022",
+        "title": "Master of Computer Applications",
+        "where": "Dr. APJ Abdul Kalam Technical University · Lucknow",
+        "edu": true,
+        "points": []
+      },
+      {
+        "when": "2017 — 2020",
+        "title": "Bachelor of Computer Applications",
+        "where": "Rakshpal Bahadur College of Institutions · Bareilly",
+        "edu": true,
+        "points": []
+      }
+    ]
+  },
+  "contact": {
+    "tag": "// contact",
+    "title": "Let's build something",
+    "highlight": "reliable.",
+    "intro": "Hiring for a frontend, full-stack or DevOps role? Or just want to talk about government-scale web apps? Send me a message and I'll reply within a day or two.",
+    "email": "rj483313@gmail.com",
+    "formTitle": "Send me a message",
+    "links": [
+      {
+        "label": "LinkedIn",
+        "icon": "work",
+        "href": "https://www.linkedin.com/in/rahul-jaiswal-66491122a/"
+      },
+      {
+        "label": "GitHub",
+        "icon": "github",
+        "href": "https://github.com/RahulJaiswalKeenable"
+      }
+    ]
+  }
+}
