@@ -176,6 +176,22 @@
         ]
       },
       {
+        "kind": "Mobile",
+        "badge": "✓ Shipped",
+        "title": "NPI Mobile App",
+        "live": "https://play.google.com/store/apps/details?id=in.gov.indiaportal",
+        "code": "",
+        "points": [
+          "Cross-platform Android and iOS app for the National Portal",
+          "GraphQL data fetching with optimised screen performance",
+          "In-app search across portal content"
+        ],
+        "stack": [
+          "React Native",
+          "GraphQL"
+        ]
+      },
+      {
         "kind": "Platform · CMS",
         "badge": "✓ Shipped",
         "title": "Strapi CMS for NPI 2.0",
@@ -208,22 +224,6 @@
           "Next.js",
           "Storybook",
           "SonarQube"
-        ]
-      },
-      {
-        "kind": "Mobile",
-        "badge": "✓ Shipped",
-        "title": "NPI Mobile App",
-        "live": "",
-        "code": "",
-        "points": [
-          "Cross-platform Android and iOS app for the National Portal",
-          "GraphQL data fetching with optimised screen performance",
-          "In-app search across portal content"
-        ],
-        "stack": [
-          "React Native",
-          "GraphQL"
         ]
       }
     ]
